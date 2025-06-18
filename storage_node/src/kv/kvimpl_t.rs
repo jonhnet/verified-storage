@@ -490,7 +490,7 @@ where
         requires
             self.valid()
         ensures
-            result@.to_set() == self@.get_keys()
+            result@.to_set().to_infinite() == self@.get_keys()
     {
         self.untrusted_kv_impl.untrusted_get_keys()
     }

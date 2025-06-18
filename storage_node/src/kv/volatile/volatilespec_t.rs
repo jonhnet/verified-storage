@@ -48,7 +48,7 @@ verus! {
     pub struct VolatileKvIndexEntry
     {
         pub item_offset: int, // the physical offset of the metadata header associated with this key
-        pub list_node_offsets: Map<(int, int), ListNodeIndexEntry>, // maps a range of indexes to the corresponding entry
+        pub list_node_offsets: IMap<(int, int), ListNodeIndexEntry>, // maps a range of indexes to the corresponding entry
         pub list_len: int,
     }
 
@@ -91,7 +91,7 @@ verus! {
                         key,
                         VolatileKvIndexEntry {
                             item_offset,
-                            list_node_offsets: Map::empty(),
+                            list_node_offsets: IMap::empty(),
                             list_len: 0
                         }
                     ),
@@ -219,7 +219,7 @@ verus! {
             } else {
                 let entry = self.contents[key];
                 // First, determine which (if any) nodes will be completely removed
-                let nodes_to_remove = Set::new(|k| {
+                let nodes_to_remove = ISet::new(|k| {
                     let (i, j) = k;
                     &&& i <= j < trim_length
                     &&& entry.list_node_offsets.contains_key((i, j))
@@ -246,7 +246,7 @@ verus! {
                             .remove(range_key); // remove the node to trim so that we can update other nodes without worrying about this one
 
                         // shift all indexes in the map over by the trim length
-                        let shifted_node_map = Map::new(
+                        let shifted_node_map = IMap::new(
                             |k: (int, int)| {
                                 let (i, j) = k;
                                 new_node_map.contains_key((i + trim_length, j + trim_length))

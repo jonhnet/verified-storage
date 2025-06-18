@@ -117,7 +117,7 @@ verus! {
         I: Item<K>,
     {
         pub id: u128,
-        pub contents: Map<K, (I, Seq<L>)>,
+        pub contents: IMap<K, (I, Seq<L>)>,
         pub _phantom: Option<E>
     }
 
@@ -149,8 +149,8 @@ verus! {
         pub open spec fn construct_view_contents(
             volatile_store_state: VolatileKvIndexView<K>,
             durable_store_state: DurableKvStoreView<K, I, L, E>
-        ) -> Map<K, (I, Seq<L>)> {
-            Map::new(
+        ) -> IMap<K, (I, Seq<L>)> {
+            IMap::new(
                 |k| { volatile_store_state.contains_key(k) },
                 |k| {
                     let index_entry = volatile_store_state[k].unwrap();
@@ -321,7 +321,7 @@ verus! {
             }
         }
 
-        pub open spec fn get_keys(self) -> Set<K>
+        pub open spec fn get_keys(self) -> ISet<K>
         {
             self.contents.dom()
         }

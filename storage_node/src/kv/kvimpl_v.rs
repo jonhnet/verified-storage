@@ -85,7 +85,7 @@ where
             self@.empty()
     {
         lemma_empty_map_contains_no_keys(self.volatile_index@.contents);
-        assert(Set::new(|k| self.volatile_index@.contains_key(k)) =~= Set::<K>::empty());
+        assert(ISet::new(|k| self.volatile_index@.contains_key(k)) =~= ISet::<K>::empty());
     }
 
     pub closed spec fn valid(self) -> bool
@@ -545,7 +545,7 @@ where
         requires
             self.valid()
         ensures
-            result@.to_set() == self@.get_keys()
+            result@.to_set().to_infinite() == self@.get_keys()
     {
         assume(false);
         self.volatile_index.get_keys()
