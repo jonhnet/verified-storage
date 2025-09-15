@@ -22,7 +22,7 @@ where
     pub(super) status: Ghost<JournalStatus>,
     pub(super) constants: JournalConstants,
     pub(super) journal_length: u64,
-    pub(super) journaled_addrs: Ghost<Set<int>>,
+    pub(super) journaled_addrs: Ghost<ISet<int>>,
     pub(super) entries: ConcreteJournalEntries,
 }
 
@@ -148,7 +148,7 @@ where
             self@ == old(self)@.abort(),
     {
         self.journal_length = 0;
-        self.journaled_addrs = Ghost(Set::<int>::empty());
+        self.journaled_addrs = Ghost(ISet::<int>::empty());
         self.entries = ConcreteJournalEntries::new();
     }
 

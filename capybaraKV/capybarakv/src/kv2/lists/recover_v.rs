@@ -29,16 +29,16 @@ pub(super) struct ListRecoveryMapping<L>
     where
         L: PmCopy + LogicalRange + Sized + std::fmt::Debug,
 {
-    pub row_info: Map<u64, ListRowRecoveryInfo<L>>,
-    pub list_info: Map<u64, Seq<u64>>,
-    pub list_elements: Map<u64, Seq<L>>,
+    pub row_info: IMap<u64, ListRowRecoveryInfo<L>>,
+    pub list_info: IMap<u64, Seq<u64>>,
+    pub list_elements: IMap<u64, Seq<L>>,
 }
 
 impl<L> ListRecoveryMapping<L>
     where
         L: PmCopy + LogicalRange + Sized + std::fmt::Debug,
 {
-    pub(super) open spec fn new(s: Seq<u8>, list_addrs: Set<u64>, sm: ListTableStaticMetadata) -> Option<Self>
+    pub(super) open spec fn new(s: Seq<u8>, list_addrs: ISet<u64>, sm: ListTableStaticMetadata) -> Option<Self>
     {
         if exists|mapping: Self| mapping.corresponds(s, list_addrs, sm) {
             Some(choose|mapping: ListRecoveryMapping<L>| mapping.corresponds(s, list_addrs, sm))
@@ -51,9 +51,9 @@ impl<L> ListRecoveryMapping<L>
     pub(super) open spec fn new_empty(tm: TableMetadata) -> Self
     {
         Self{
-            row_info: Map::<u64, ListRowRecoveryInfo<L>>::empty(),
-            list_info: Map::<u64, Seq<u64>>::empty(),
-            list_elements: Map::<u64, Seq<L>>::empty(),
+            row_info: IMap::<u64, ListRowRecoveryInfo<L>>::empty(),
+            list_info: IMap::<u64, Seq<u64>>::empty(),
+            list_elements: IMap::<u64, Seq<L>>::empty(),
         }
     }
     
@@ -105,14 +105,14 @@ impl<L> ListRecoveryMapping<L>
            } ==> self.row_info[self.list_info[head][pos]].next == self.list_info[head][successor]
     }
 
-    pub(super) open spec fn corresponds(self, s: Seq<u8>, list_addrs: Set<u64>, sm: ListTableStaticMetadata) -> bool
+    pub(super) open spec fn corresponds(self, s: Seq<u8>, list_addrs: ISet<u64>, sm: ListTableStaticMetadata) -> bool
     {
         &&& self.internally_consistent(sm)
         &&& self.row_info_corresponds(s, sm)
         &&& self.list_elements.dom() == list_addrs
     }
 
-    pub(super) proof fn lemma_uniqueness_element(self, other: Self, s: Seq<u8>, list_addrs: Set<u64>,
+    pub(super) proof fn lemma_uniqueness_element(self, other: Self, s: Seq<u8>, list_addrs: ISet<u64>,
                                                  sm: ListTableStaticMetadata, head: u64, pos: int)
         requires
             sm.valid::<L>(),
@@ -134,7 +134,7 @@ impl<L> ListRecoveryMapping<L>
         }
     }
 
-    pub(super) proof fn lemma_uniqueness_length(self, other: Self, s: Seq<u8>, list_addrs: Set<u64>,
+    pub(super) proof fn lemma_uniqueness_length(self, other: Self, s: Seq<u8>, list_addrs: ISet<u64>,
                                                 sm: ListTableStaticMetadata, head: u64)
         requires
             sm.valid::<L>(),
@@ -147,7 +147,7 @@ impl<L> ListRecoveryMapping<L>
         self.lemma_uniqueness_element(other, s, list_addrs, sm, head, self.list_info[head].len() - 1);
     }
 
-    pub(super) proof fn lemma_uniqueness_list(self, other: Self, s: Seq<u8>, list_addrs: Set<u64>,
+    pub(super) proof fn lemma_uniqueness_list(self, other: Self, s: Seq<u8>, list_addrs: ISet<u64>,
                                               sm: ListTableStaticMetadata, head: u64)
         requires
             sm.valid::<L>(),
@@ -166,7 +166,7 @@ impl<L> ListRecoveryMapping<L>
         assert(other.list_info[head] =~= self.list_info[head]);
     }
 
-    pub(super) proof fn lemma_uniqueness_elements(self, other: Self, s: Seq<u8>, list_addrs: Set<u64>,
+    pub(super) proof fn lemma_uniqueness_elements(self, other: Self, s: Seq<u8>, list_addrs: ISet<u64>,
                                                   sm: ListTableStaticMetadata, head: u64)
         requires
             sm.valid::<L>(),
@@ -185,7 +185,7 @@ impl<L> ListRecoveryMapping<L>
         assert(other.list_elements[head] =~= self.list_elements[head]);
     }
 
-    pub(super) proof fn lemma_uniqueness(self, other: Self, s: Seq<u8>, list_addrs: Set<u64>,
+    pub(super) proof fn lemma_uniqueness(self, other: Self, s: Seq<u8>, list_addrs: ISet<u64>,
                                          sm: ListTableStaticMetadata)
         requires
             sm.valid::<L>(),
@@ -217,7 +217,7 @@ impl<L> ListRecoveryMapping<L>
     pub(super) proof fn lemma_corresponds_implies_equals_new(
         self,
         s: Seq<u8>,
-        list_addrs: Set<u64>,
+        list_addrs: ISet<u64>,
         sm: ListTableStaticMetadata
     )
         requires
@@ -243,7 +243,7 @@ where
     pub proof fn lemma_recover_depends_only_on_my_area_if_valid(
         s1: Seq<u8>,
         s2: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ListTableStaticMetadata,
     )
         requires
@@ -265,7 +265,7 @@ where
     pub proof fn lemma_recover_depends_only_on_my_area(
         s1: Seq<u8>,
         s2: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ListTableStaticMetadata,
     )
         requires

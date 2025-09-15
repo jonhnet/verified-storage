@@ -163,14 +163,14 @@ impl TableMetadata
             self.valid(),
         ensures
             ({
-                let valid_row_addrs = Set::<u64>::new(|row_addr: u64| self.validate_row_addr(row_addr));
+                let valid_row_addrs = ISet::<u64>::new(|row_addr: u64| self.validate_row_addr(row_addr));
                 &&& valid_row_addrs.len() == self.num_rows
                 &&& valid_row_addrs.finite()
             }),
     {
         // The proof is in three parts.
 
-        let valid_row_addrs = Set::<u64>::new(|row_addr: u64| self.validate_row_addr(row_addr));
+        let valid_row_addrs = ISet::<u64>::new(|row_addr: u64| self.validate_row_addr(row_addr));
         let rows: Seq<u64> = Seq::new(self.num_rows as nat, |row_index: int| self.spec_row_index_to_addr(row_index));
 
         // First, we prove that the sequence containing all row addresses in order has no duplicates.
@@ -182,7 +182,7 @@ impl TableMetadata
         }
 
         // Second, we prove that if you convert that sequence to a set, you get the set of valid row addresses.
-        assert(rows.to_set() =~= valid_row_addrs) by {
+        assert(rows.to_set().to_infinite() =~= valid_row_addrs) by {
             assert forall|row_addr: u64| #[trigger] rows.to_set().contains(row_addr)
                        implies valid_row_addrs.contains(row_addr) by {
                 let row_index = choose|row_index: int| 0 <= row_index < rows.len() && rows[row_index] == row_addr;

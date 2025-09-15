@@ -53,10 +53,10 @@ where
             pm.constants() == old(pm).constants(),
             pm@.valid(),
             pm@.len() == old(pm)@.len(),
-            Self::recover(pm@.read_state, Set::<u64>::empty(), *sm) == Some(ItemTableSnapshot::<I>::init()),
+            Self::recover(pm@.read_state, ISet::<u64>::empty(), *sm) == Some(ItemTableSnapshot::<I>::init()),
             seqs_match_except_in_range(old(pm)@.read_state, pm@.read_state, sm.table.start as int, sm.table.end as int),
     {
-        assert(Self::recover(pm@.read_state, Set::<u64>::empty(), *sm) =~= Some(ItemTableSnapshot::<I>::init()));
+        assert(Self::recover(pm@.read_state, ISet::<u64>::empty(), *sm) =~= Some(ItemTableSnapshot::<I>::init()));
     }
     
     pub exec fn setup(
@@ -77,7 +77,7 @@ where
             pm@.len() == old(pm)@.len(),
             match result {
                 Ok(sm) => {
-                    &&& Self::recover(pm@.read_state, Set::<u64>::empty(), sm) == Some(ItemTableSnapshot::<I>::init())
+                    &&& Self::recover(pm@.read_state, ISet::<u64>::empty(), sm) == Some(ItemTableSnapshot::<I>::init())
                     &&& seqs_match_except_in_range(old(pm)@.read_state, pm@.read_state, sm.start() as int, sm.end() as int)
                     &&& sm.valid::<I>()
                     &&& min_start <= sm.start() <= sm.end() <= max_end

@@ -128,7 +128,7 @@ where
         ensures
             match result {
                 Ok(keys) => {
-                    &&& keys@.to_set() == self@.tentative.get_keys()
+                    &&& keys@.to_set().to_infinite() == self@.tentative.get_keys()
                     &&& keys@.no_duplicates()
                 },
                 Err(KvError::CRCMismatch) => !self@.pm_constants.impervious_to_corruption(),

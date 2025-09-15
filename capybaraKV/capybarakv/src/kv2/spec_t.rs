@@ -120,7 +120,7 @@ pub open spec fn end_of_range<L>(list_elements: Seq<L>) -> usize
 pub struct AtomicKvStore<K, I, L>
 {
     pub logical_range_gaps_policy: LogicalRangeGapsPolicy,
-    pub m: Map<K, (I, Seq<L>)>,
+    pub m: IMap<K, (I, Seq<L>)>,
 }
 
 impl<K, I, L> AtomicKvStore<K, I, L>
@@ -132,7 +132,7 @@ where
     {
         Self{
             logical_range_gaps_policy,
-            m: Map::<K, (I, Seq<L>)>::empty()
+            m: IMap::<K, (I, Seq<L>)>::empty()
         }
     }
 
@@ -153,7 +153,7 @@ where
 
     pub open spec fn num_list_elements(&self) -> int
     {
-        self.m.dom().to_seq().fold_left(0, |total: int, k: K| total + self.m[k].1.len())
+        self.m.dom().to_finite().to_seq().fold_left(0, |total: int, k: K| total + self.m[k].1.len())
     }
 
     pub open spec fn spec_index(self, key: K) -> Option<(I, Seq<L>)>
@@ -396,7 +396,7 @@ where
         }
     }
 
-    pub open spec fn get_keys(self) -> Set<K>
+    pub open spec fn get_keys(self) -> ISet<K>
     {
         self.m.dom()
     }

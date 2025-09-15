@@ -19,17 +19,17 @@ impl<L> ListTableInternalView<L>
     where
         L: PmCopy + LogicalRange + Sized + std::fmt::Debug,
 {
-    pub(super) open spec fn commit_m(self) -> Map<u64, ListTableEntryView<L>>
+    pub(super) open spec fn commit_m(self) -> IMap<u64, ListTableEntryView<L>>
     {
-        Map::<u64, ListTableEntryView<L>>::new(
+        IMap::<u64, ListTableEntryView<L>>::new(
             |list_addr: u64| self.m.contains_key(list_addr),
             |list_addr: u64| self.m[list_addr].commit(),
         )
     }
 
-    pub(super) open spec fn commit_row_info(self) -> Map<u64, ListRowDisposition>
+    pub(super) open spec fn commit_row_info(self) -> IMap<u64, ListRowDisposition>
     {
-        Map::<u64, ListRowDisposition>::new(
+        IMap::<u64, ListRowDisposition>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr),
             |row_addr: u64| match self.row_info[row_addr] {
                 ListRowDisposition::InPendingAllocationList{ pos } =>
@@ -49,7 +49,7 @@ impl<L> ListTableInternalView<L>
             durable_mapping: self.tentative_mapping,
             row_info: self.commit_row_info(),
             m: self.commit_m(),
-            deletes_inverse: Map::<u64, nat>::empty(),
+            deletes_inverse: IMap::<u64, nat>::empty(),
             deletes: Seq::<ListSummary>::empty(),
             modifications: Seq::<Option<u64>>::empty(),
             free_list: self.free_list + self.pending_deallocations,
@@ -178,7 +178,7 @@ where
                 let m = self@.durable.m;
                 &&& m.dom().finite()
                 &&& self@.used_slots ==
-                       m.dom().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
+                       m.dom().to_finite().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
             }),
     {
         let ghost new_iv = self.internal_view().commit();
@@ -207,7 +207,7 @@ where
                 read_state: jv_before_commit.commit_state,
                 commit_state: jv_before_commit.commit_state,
                 remaining_capacity: jv_before_commit.constants.journal_capacity as int,
-                journaled_addrs: Set::<int>::empty(),
+                journaled_addrs: ISet::<int>::empty(),
                 ..jv_before_commit
             };
             assert(self.valid(jv_committed));

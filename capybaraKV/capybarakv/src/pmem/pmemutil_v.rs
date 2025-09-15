@@ -554,7 +554,7 @@ verus! {
     // gives the same result.
     pub open spec fn addresses_not_accessed_by_recovery<T>(
         s: Seq<u8>,
-        addrs: Set<int>,
+        addrs: ISet<int>,
         recover_fn: spec_fn(Seq<u8>) -> T,
     ) -> bool
     {
@@ -573,7 +573,7 @@ verus! {
         durable_state: Seq<u8>,
         write_addr: int,
         bytes_to_write: Seq<u8>,
-        addrs: Set<int>,
+        addrs: ISet<int>,
         recover_fn: spec_fn(Seq<u8>) -> T,
     )
         requires
@@ -598,7 +598,7 @@ verus! {
     // current one.
     pub proof fn lemma_auto_if_addresses_unreachable_in_recovery_then_recovery_unchanged_by_write<T>(
         durable_state: Seq<u8>,
-        addrs: Set<int>,
+        addrs: ISet<int>,
         recover_fn: spec_fn(Seq<u8>) -> T,
     )
         requires

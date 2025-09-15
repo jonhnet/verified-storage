@@ -41,7 +41,7 @@ pub struct JournalView {
     pub read_state: Seq<u8>,
     pub commit_state: Seq<u8>,
     pub remaining_capacity: int,
-    pub journaled_addrs: Set<int>,
+    pub journaled_addrs: ISet<int>,
     pub powerpm_id: int,
 }
 
@@ -86,7 +86,7 @@ impl JournalView {
         JournalView{
             commit_state: self.read_state,
             remaining_capacity: self.constants.journal_capacity as int,
-            journaled_addrs: Set::<int>::empty(),
+            journaled_addrs: ISet::<int>::empty(),
             ..self
         }
     }
@@ -98,7 +98,7 @@ impl JournalView {
                 read_state: self.commit_state,
                 commit_state: self.commit_state,
                 remaining_capacity: self.constants.journal_capacity as int,
-                journaled_addrs: Set::<int>::empty(),
+                journaled_addrs: ISet::<int>::empty(),
                 ..old_self
             }
         &&& seqs_match_in_range(old_self.commit_state, self.commit_state, self.constants.app_area_start as int,

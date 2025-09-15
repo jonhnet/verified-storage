@@ -91,9 +91,9 @@ where
     pub(super) space_needed_to_journal_next: u64,
     pub(super) durable_mapping: Ghost<ListRecoveryMapping<L>>,
     pub(super) tentative_mapping: Ghost<ListRecoveryMapping<L>>,
-    pub(super) row_info: Ghost<Map<u64, ListRowDisposition>>,
+    pub(super) row_info: Ghost<IMap<u64, ListRowDisposition>>,
     pub(super) m: HashMap<u64, ListTableEntry<L>>,
-    pub(super) deletes_inverse: Ghost<Map<u64, nat>>,
+    pub(super) deletes_inverse: Ghost<IMap<u64, nat>>,
     pub(super) deletes: Vec<ListSummary>,
     pub(super) modifications: Vec<Option<u64>>,
     pub(super) free_list: Vec<u64>,
@@ -126,7 +126,7 @@ where
     
     pub open(super) spec fn recover(
         s: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ListTableStaticMetadata,
     ) -> Option<ListTableSnapshot<L>>
     {
@@ -160,7 +160,7 @@ where
     pub open spec fn state_equivalent_for_me(
         s: Seq<u8>,
         durable_state: Seq<u8>,
-        list_addrs: Set<u64>,
+        list_addrs: ISet<u64>,
         constants: JournalConstants,
         sm: ListTableStaticMetadata
     ) -> bool

@@ -29,7 +29,7 @@ impl<L> ListRecoveryMapping<L>
         let new_head = self.list_info[list_addr][trim_length];
         let new_addrs = self.list_info[list_addr].skip(trim_length);
         let new_elements = self.list_elements[list_addr].skip(trim_length);
-        let new_row_info = Map::<u64, ListRowRecoveryInfo<L>>::new(
+        let new_row_info = IMap::<u64, ListRowRecoveryInfo<L>>::new(
             |row_addr: u64| {
                 &&& self.row_info.contains_key(row_addr)
                 &&& self.row_info[row_addr].head == list_addr ==> self.row_info[row_addr].pos >= trim_length
@@ -193,7 +193,7 @@ impl<L> ListTableInternalView<L>
             0 < trim_length < self.tentative_mapping.list_info[list_addr].len(),
     {
         let new_head = self.tentative_mapping.list_info[list_addr][trim_length];
-        let new_row_info = Map::<u64, ListRowDisposition>::new(
+        let new_row_info = IMap::<u64, ListRowDisposition>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr),
             |row_addr: u64|
                 if {

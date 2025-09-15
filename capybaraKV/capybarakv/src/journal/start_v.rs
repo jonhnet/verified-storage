@@ -439,7 +439,7 @@ where
                     &&& j@.constants == Self::recover(powerpm@.durable_state).unwrap().constants
                     &&& j@.pm_constants == powerpm.constants()
                     &&& j@.remaining_capacity == j@.constants.journal_capacity
-                    &&& j@.journaled_addrs == Set::<int>::empty()
+                    &&& j@.journaled_addrs == ISet::<int>::empty()
                     &&& j@.durable_state == j@.read_state
                     &&& j@.read_state == j@.commit_state
                     &&& j@.powerpm_id == powerpm.id()
@@ -491,7 +491,7 @@ where
             status: Ghost(JournalStatus::Quiescent),
             constants: constants.clone(),
             journal_length: 0,
-            journaled_addrs: Ghost(Set::<int>::empty()),
+            journaled_addrs: Ghost(ISet::<int>::empty()),
             entries: ConcreteJournalEntries::new(),
         };
         Ok(j)

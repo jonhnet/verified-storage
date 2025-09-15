@@ -711,7 +711,7 @@ where
         Self::clear_log::<PermFactory>(&mut self.powerpm, Tracked(perm_factory), self.vm, &self.sm);
         self.status = Ghost(JournalStatus::Quiescent);
         self.journal_length = 0;
-        self.journaled_addrs = Ghost(Set::<int>::empty());
+        self.journaled_addrs = Ghost(ISet::<int>::empty());
         self.entries.clear();
         complete
     }

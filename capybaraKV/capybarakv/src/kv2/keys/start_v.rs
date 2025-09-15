@@ -34,7 +34,7 @@ where
             journal.valid(),
             journal.recover_idempotent(),
             journal@.valid(),
-            journal@.journaled_addrs == Set::<int>::empty(),
+            journal@.journaled_addrs == ISet::<int>::empty(),
             journal@.durable_state == journal@.read_state,
             journal@.read_state == journal@.commit_state,
             journal@.constants.app_area_start <= sm.start(),
@@ -53,8 +53,8 @@ where
                     &&& keys@.tentative == Some(recovered_state)
                     &&& recovered_state.key_info.dom().finite()
                     &&& keys@.used_slots == recovered_state.key_info.dom().len()
-                    &&& item_addrs@ == recovered_state.item_addrs()
-                    &&& list_addrs@.to_set() == recovered_state.list_addrs()
+                    &&& item_addrs@.to_infinite() == recovered_state.item_addrs()
+                    &&& list_addrs@.to_set().to_infinite() == recovered_state.list_addrs()
                     &&& !list_addrs@.contains(0)
                 },
                 Err(KvError::CRCMismatch) => !journal@.pm_constants.impervious_to_corruption(),
@@ -83,7 +83,7 @@ where
                 journal.valid(),
                 journal.recover_idempotent(),
                 journal@.valid(),
-                journal@.journaled_addrs == Set::<int>::empty(),
+                journal@.journaled_addrs == ISet::<int>::empty(),
                 journal@.durable_state == journal@.read_state,
                 journal@.read_state == journal@.commit_state,
                 journal@.constants.app_area_start <= sm.start(),
@@ -120,8 +120,8 @@ where
                     &&& sm.table.validate_row_addr(free_row_addr)
                     &&& 0 <= sm.table.row_addr_to_index(free_row_addr) < row_index
                 },
-                forall|k: K| #[trigger] m@.contains_key(k) ==> {
-                    let used_row_addr = m@[k].row_addr;
+                forall|k: K| #[trigger] m@.to_infinite().contains_key(k) ==> {
+                    let used_row_addr = m@.to_infinite()[k].row_addr;
                     &&& sm.table.validate_row_addr(used_row_addr)
                     &&& 0 <= sm.table.row_addr_to_index(used_row_addr) < row_index
                     &&& memory_mapping.row_info.contains_key(used_row_addr)
@@ -160,7 +160,7 @@ where
             let cdb = cdb.unwrap();
 
             let ghost old_memory_mapping = memory_mapping;
-            let ghost old_m = m@;
+            let ghost old_m = m@.to_infinite();
             let ghost old_list_addrs = list_addrs@;
 
             if cdb {
@@ -194,6 +194,24 @@ where
                     }
                     assert(list_addrs@[list_addrs@.len() - 1] == rm.list_addr);
                 }
+
+//                 proof {
+//                 let gm = m@.to_infinite();
+//                 assert( m@.to_infinite().contains_key(k) );
+//                 assert( memory_mapping.row_info.contains_key(gm[k].row_addr) );
+//                 assert( memory_mapping.row_info[gm[k].row_addr] == (KeyRowDisposition::InHashTable{ k, rm: gm[k].rm }) );
+//                 assert forall|gk: K| #[trigger] gm.contains_key(gk) implies {
+//                     &&& memory_mapping.row_info.contains_key(gm[gk].row_addr)
+//                     &&& memory_mapping.row_info[gm[gk].row_addr] == (KeyRowDisposition::InHashTable{ k: gk, rm: gm[gk].rm })} by {
+//                     if gk == k {
+//                         assert( memory_mapping.row_info.contains_key(gm[gk].row_addr) );
+//                     } else {
+//                         assert( old_m.to_infinite().contains_key(gk) ); // missing trigger. ugh.
+//                         assert( memory_mapping.row_info.contains_key(gm[gk].row_addr) );
+//                     }
+//                 }
+//                 assert( memory_mapping.consistent_with_hash_table(gm) );
+//                 }
             }
             else {
                 proof {
@@ -204,6 +222,7 @@ where
 
             row_index = row_index + 1;
             row_addr = row_addr + sm.table.row_size;
+//             assert( memory_mapping.consistent_with_hash_table(m@.to_infinite()) );
         }
     
         assert forall|row_addr: u64| #[trigger] sm.table.validate_row_addr(row_addr)
@@ -226,13 +245,29 @@ where
 
         let ghost recovered_state = Self::recover(journal@.read_state, *sm).unwrap();
         assert(keys@.durable =~= recovered_state);
-        assert(item_addrs@ =~= recovered_state.item_addrs());
-        assert(list_addrs@.to_set() =~= recovered_state.list_addrs());
+        assert(item_addrs@.to_infinite() =~= recovered_state.item_addrs());
+        assert(list_addrs@.to_set().to_infinite() =~= recovered_state.list_addrs());
 
         proof {
             memory_mapping.lemma_corresponds_implication_for_free_list_length(free_list@, *sm);
         }
 
+        proof {
+            let recovered_state = Self::recover(journal@.read_state, *sm).unwrap();
+            assert( recovered_state.key_info.dom().finite() );
+            assert( keys@.used_slots == recovered_state.key_info.dom().len() );
+            assert({
+                &&& keys.valid(journal@)
+                &&& keys@.sm == *sm
+                &&& keys@.durable == recovered_state
+                &&& keys@.tentative == Some(recovered_state)
+                &&& recovered_state.key_info.dom().finite()
+                &&& keys@.used_slots == recovered_state.key_info.dom().len()
+                &&& item_addrs@.to_infinite() == recovered_state.item_addrs()
+                &&& list_addrs@.to_set().to_infinite() == recovered_state.list_addrs()
+                &&& !list_addrs@.contains(0)
+            });
+        }
         Ok((keys, item_addrs, list_addrs))
     }
 }

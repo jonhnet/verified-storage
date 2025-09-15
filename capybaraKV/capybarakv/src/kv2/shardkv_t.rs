@@ -43,12 +43,12 @@ where
     I: PmCopy + Sized + std::fmt::Debug,
     L: PmCopy + LogicalRange + std::fmt::Debug + Copy,
 {
-    spec fn namespaces(self) -> Set<int>;
+    spec fn namespaces(self) -> ISet<int>;
     spec fn id(self) -> int;
 
     exec fn setup(
         nshards: usize,
-        Tracked(shard_res): Tracked<Map<int, GhostVar<ConcurrentKvStoreView::<K, I, L>>>>,
+        Tracked(shard_res): Tracked<IMap<int, GhostVar<ConcurrentKvStoreView::<K, I, L>>>>,
         Ghost(ps): Ghost<SetupParameters>,
         Ghost(pm_constants): Ghost<PersistentMemoryConstants>,
         Ghost(namespace): Ghost<int>,
@@ -90,7 +90,7 @@ where
             shard_namespace != inv.namespace(),
         ensures
             result.id() == inv.constant().combined_id,
-            result.namespaces() == set![inv.namespace(), shard_namespace];
+            result.namespaces() == iset![inv.namespace(), shard_namespace];
 
     exec fn read_item<CB>(
         &self,
@@ -301,7 +301,7 @@ pub exec fn setup<PM, K, I, L>(
         match result {
             Ok((kv, res)) => {
                 &&& kv.id() == res@.id()
-                &&& kv.namespaces() == set![namespace, shard_namespace]
+                &&& kv.namespaces() == iset![namespace, shard_namespace]
                 &&& res@@ == ConcurrentKvStoreView::<K, I, L>{
                         ps: *ps,
                         pm_constants: pm_constants,
@@ -320,7 +320,7 @@ pub exec fn setup<PM, K, I, L>(
     let nshards = pms.len();
     let mut pms_mut = pms;
     let mut shard_kvs: Vec<ConcurrentKvStore::<PM, K, I, L>> = Vec::new();
-    let tracked mut shard_res = Map::<int, GhostVar<ConcurrentKvStoreView::<K, I, L>>>::tracked_empty();
+    let tracked mut shard_res = IMap::<int, GhostVar<ConcurrentKvStoreView::<K, I, L>>>::tracked_empty();
 
     for idx in 0..nshards
         invariant
@@ -397,7 +397,7 @@ pub exec fn recover<PM, K, I, L>(
         match result {
             Ok(kv) => {
                 &&& kv.id() == id
-                &&& kv.namespaces() == set![namespace, shard_namespace]
+                &&& kv.namespaces() == iset![namespace, shard_namespace]
             },
             Err(KvError::CRCMismatch) => !pm_constants.impervious_to_corruption(),
             Err(KvError::WrongKvStoreId{ requested_id, actual_id }) => {

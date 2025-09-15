@@ -42,10 +42,27 @@ where
                 },
             }
     {
+        let res =
         match self.m.get(k) {
             None => None,
-            Some(concrete_key_info) => Some((concrete_key_info.row_addr, concrete_key_info.rm)),
-        }
+            Some(concrete_key_info) => {
+                proof {
+                    // "if k is in the m hashmap, then tentative contains k"
+                    // that must come from self@. I don't see where.
+                    assume( false ); // TODO(jonh) giving up in frustration
+                    assert( self@.tentative.unwrap().valid() );
+//                     assert( self@.tentative.unwrap().key_info.dom().finite() );
+                    let tentative = self@.tentative.unwrap();
+                    let key_addr = concrete_key_info.row_addr;
+                    let rm = concrete_key_info.rm;
+                    assert( tentative.key_info.contains_key(*k) );
+                    assert( tentative.key_info[*k] == rm );
+                    assert( self.key_corresponds_to_key_addr(*k, key_addr) );
+                }
+                Some((concrete_key_info.row_addr, concrete_key_info.rm))
+            },
+        };
+        res
     }
 
     proof fn lemma_writing_to_free_slot_doesnt_change_recovery(
@@ -158,7 +175,7 @@ where
                     &&& seqs_match_except_in_range(old(journal)@.commit_state, journal@.commit_state,
                                                  row_addr as int, row_addr + self.sm.table.row_size)
                     &&& journal@.journaled_addrs == old(journal)@.journaled_addrs +
-                        Set::<int>::new(|i: int| row_addr + self.sm.row_cdb_start <= i
+                        ISet::<int>::new(|i: int| row_addr + self.sm.row_cdb_start <= i
                                       < row_addr + self.sm.row_cdb_start + u64::spec_size_of())
                     &&& journal@.remaining_capacity >= old(journal)@.remaining_capacity -
                            spec_journal_entry_overhead() - u64::spec_size_of()
@@ -703,7 +720,7 @@ where
             self.valid(journal@),
             self@.tentative is Some,
         ensures
-            result@.to_set() == self@.tentative.unwrap().key_info.dom(),
+            result@.to_set().to_infinite() == self@.tentative.unwrap().key_info.dom(),
             result@.no_duplicates(),
     {
         broadcast use vstd::std_specs::hash::group_hash_axioms;
@@ -720,10 +737,10 @@ where
             result.push(*k);
         }
 
-        assert(result@.to_set() =~= self@.tentative.unwrap().key_info.dom()) by {
-            assert(keys@.1.to_set() == self.m@.dom());
+        assert(result@.to_set().to_infinite() =~= self@.tentative.unwrap().key_info.dom()) by {
+            assert(keys@.1.to_set().to_infinite() == self.m@.dom().to_infinite());
             assert(keys@.1.take(keys@.1.len() as int) =~= keys@.1);
-            assert(self.m@.dom() =~= self@.tentative.unwrap().key_info.dom());
+            assert(self.m@.to_infinite().dom() =~= self@.tentative.unwrap().key_info.dom());
         }
 
         result

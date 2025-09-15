@@ -9,14 +9,14 @@ verus! {
 #[verifier::ext_equal]
 pub struct ListTableSnapshot<L>
 {
-    pub m: Map<u64, Seq<L>>, // always maps the null address (0) to the empty sequence
+    pub m: IMap<u64, Seq<L>>, // always maps the null address (0) to the empty sequence
 }
 
 impl<L> ListTableSnapshot<L>
 {
     pub open spec fn init() -> Self
     {
-        Self{ m: Map::<u64, Seq<L>>::empty() }
+        Self{ m: IMap::<u64, Seq<L>>::empty() }
     }
 
     pub open spec fn delete(&self, list_addr: u64) -> Self

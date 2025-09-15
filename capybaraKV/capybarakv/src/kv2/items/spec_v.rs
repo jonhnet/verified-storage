@@ -8,14 +8,14 @@ verus! {
 #[verifier::ext_equal]
 pub struct ItemTableSnapshot<I>
 {
-    pub m: Map<u64, I>,
+    pub m: IMap<u64, I>,
 }
 
 impl<I> ItemTableSnapshot<I>
 {
     pub open spec fn init() -> Self
     {
-        Self{ m: Map::<u64, I>::empty() }
+        Self{ m: IMap::<u64, I>::empty() }
     }
 
     pub open spec fn create(&self, item_addr: u64, item: I) -> Self

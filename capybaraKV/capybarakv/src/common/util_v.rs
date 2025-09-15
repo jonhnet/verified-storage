@@ -1,6 +1,7 @@
 // This file contains miscellaneous utility functions.
 use vstd::prelude::*;
 use vstd::seq_lib::*;
+use vstd::set::*;
 use vstd::set_lib::*;
 use crate::pmem::pmemspec_t::*;
 use crate::pmem::pmcopy_t::*;
@@ -61,7 +62,7 @@ pub proof fn lemma_seqs_flatten_equal_suffix(s: Seq<Seq<u8>>)
 
 // This lemma proves that if a map is injective, then inverting it twice produces
 // the original map.
-pub proof fn lemma_injective_map_is_invertible<K, V>(map: Map<K, V>)
+pub proof fn lemma_injective_map_is_invertible<K, V>(map: IMap<K, V>)
     requires 
         map.is_injective(),
     ensures 
@@ -72,12 +73,24 @@ pub proof fn lemma_injective_map_is_invertible<K, V>(map: Map<K, V>)
     assert(map.invert().dom() == map.values());
     lemma_injective_map_inverse(map);
     lemma_injective_map_inverse(map.invert());
+
+    let mii = map.invert().invert();
+    assert forall |k| map.contains_key(k) implies mii.contains_key(k) by {
+        // TODO(jonh): How did this work before my code? Why was
+        // map.invert()[v] == k enough? Oh, because the map_lib definition
+        // of invert was an IMap constructor that declared the key set
+        // with contains_value. Now it's from_set(self.dom(map...)), which
+        // works for GMaps, but ... ugh.
+        // Could add a broadcast group lemma to get the old identity for\
+        // IMaps.
+        assert( map.invert().contains_key(map[k]) );
+    }
     assert(map =~= map.invert().invert());
 }
 
 // Proves that if a map `map` is injective, then `map.invert()` maps
 // its values to its keys.
-pub proof fn lemma_injective_map_inverse<K, V>(map: Map<K, V>)
+pub proof fn lemma_injective_map_inverse<K, V>(map: IMap<K, V>)
     requires 
         map.is_injective()
     ensures 
@@ -119,10 +132,11 @@ pub proof fn lemma_seq_len_when_no_dup_and_all_values_in_range(s: Seq<int>, min:
     s.unique_seq_to_set();
     // because s_set only has values between min and max, it's a subset 
     // of the set containing all values between min and max
-    assert(s_set.subset_of(set_int_range(min, max)));
-    lemma_int_range(min, max);
-    lemma_len_subset(s_set, set_int_range(min, max));
-    assert(s.len() <= set_int_range(min, max).len());
+    assert(s_set.subset_of(int::range_iset(min, max)));
+//     now broadcast as range_set_properties
+//     lemma_int_range(min, max);
+    lemma_len_subset(s_set, int::range_iset(min, max));
+    assert(s.len() <= int::range_iset(min, max).len());
 }
 
 // This executable function clones a vector of objects of type `T`
@@ -158,12 +172,11 @@ pub exec fn extend_vec_u8_from_slice(v: &mut Vec<u8>, s: &[u8])
     assert(v@ =~= old(v)@ + s@);
 }
 
-
-// Proves that, given that `s` is finite, it contains `v` if and only if
-// `s.to_seq()` contains `v`.
-pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: Set<A>, v: A)
-    requires
-        s.finite(),
+// TODO(jonh discuss): I'm not super unhappy about this clunky lemma change.
+// (a) this lemma belongs in vstd anyway
+// (b) this happened because to_seq is no longer available on ISets that have .finite().
+// That's ... not the worst thing that could happen.
+pub proof fn lemma_set_to_seq_contains_iff_set_contains_finite<A>(s: Set<A>, v: A)
     ensures
         s.contains(v) <==> s.to_seq().contains(v),
     decreases
@@ -179,7 +192,7 @@ pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: Set<A>, v: A)
             assert(s.to_seq().contains(v));
         }
         else {
-            lemma_set_to_seq_contains_iff_set_contains(s.remove(x), v);
+            lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), v);
             if s.contains(v) {
                 assert(s.remove(x).contains(v));
                 assert(s.remove(x).to_seq().contains(v));
@@ -191,11 +204,23 @@ pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: Set<A>, v: A)
     }
 }
 
-// Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
-// and has no duplicates.
-pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: Set<A>)
+// Proves that, given that `s` is finite, it contains `v` if and only if
+// `s.to_seq()` contains `v`.
+pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: ISet<A>, v: A)
     requires
         s.finite(),
+    ensures
+        s.contains(v) <==> s.to_finite().to_seq().contains(v),
+    decreases
+        s.len(),
+{
+    lemma_set_to_seq_contains_iff_set_contains_finite(s.to_finite(), v);
+}
+
+// TODO(jonh discuss): This should also move into vstd.
+// Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
+// and has no duplicates.
+pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates_finite<A>(s: Set<A>)
     ensures
         s.to_seq().len() == s.len(),
         s.to_seq().no_duplicates(),
@@ -205,13 +230,26 @@ pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: Set<A>)
     let q = s.to_seq();
     if s.len() != 0 {
         let x = s.choose();
-        lemma_set_to_seq_has_same_length_with_no_duplicates(s.remove(x));
+        lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.remove(x));
         assert(!s.remove(x).to_seq().contains(x)) by {
-            lemma_set_to_seq_contains_iff_set_contains(s.remove(x), x);
+            lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), x);
         }
     }
     q.unique_seq_to_set();
 }
+
+pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: ISet<A>)
+    requires
+        s.finite(),
+    ensures
+        s.to_finite().to_seq().len() == s.len(),
+        s.to_finite().to_seq().no_duplicates(),
+    decreases
+        s.len(),
+{
+    lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.to_finite());
+}
+
 
 // Prove that if there exists a bijection between two sets `s1` and `s2`,
 // where `s1` is known to be finite, then `s2` is also finite and
@@ -219,8 +257,8 @@ pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: Set<A>)
 // functions `f` and `g`, where `f` maps elements from `s1` to `s2`
 // and `g` maps elements from `s2` to `s1`.
 pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
-    s1: Set<A>,
-    s2: Set<B>,
+    s1: ISet<A>,
+    s2: ISet<B>,
     f: spec_fn(A) -> B,
     g: spec_fn(B) -> A,
 )
@@ -238,7 +276,7 @@ pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
     // * `q1` has the same length as `s1`.
     // * `q1` has no duplicates. 
 
-    let q1 = s1.to_seq();
+    let q1 = s1.to_finite().to_seq();
     assert forall|x: A| #[trigger] q1.contains(x) <==> s1.contains(x) by {
         lemma_set_to_seq_contains_iff_set_contains(s1, x);
     }
@@ -255,7 +293,7 @@ pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
     // is finite, from the ambient broadcast proof
     // `vstd::seq_lib::seq_to_set_is_finite`.
 
-    assert(q2.to_set() =~= s2) by {
+    assert(q2.to_set().to_infinite() =~= s2) by {
         assert forall|y: B| #[trigger] q2.to_set().contains(y) implies s2.contains(y) by {
             assert(q2.contains(y));
             let i = choose|i: int| 0 <= i < q2.len() && q2[i] == y;

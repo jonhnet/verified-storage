@@ -24,9 +24,9 @@ impl JournalEntry
         self.start + self.bytes_to_write.len()
     }
 
-    pub(super) open spec fn addrs(self) -> Set<int>
+    pub(super) open spec fn addrs(self) -> ISet<int>
     {
-        Set::<int>::new(|i| self.start <= i < self.end())
+        ISet::<int>::new(|i| self.start <= i < self.end())
     }
 
     pub(super) open spec fn fits(self, sm: JournalStaticMetadata) -> bool
@@ -127,7 +127,7 @@ pub(super) proof fn lemma_space_needed_for_journal_entries_list_zero_iff_journal
     }
 }
 
-pub(super) open spec fn journaled_addrs_complete(entries: Seq<JournalEntry>, journaled_addrs: Set<int>) -> bool
+pub(super) open spec fn journaled_addrs_complete(entries: Seq<JournalEntry>, journaled_addrs: ISet<int>) -> bool
 {
     forall|entry, addr| #![trigger entries.contains(entry), journaled_addrs.contains(addr)]
         entries.contains(entry) && entry.start <= addr < entry.end() ==> journaled_addrs.contains(addr)
@@ -560,7 +560,7 @@ pub(super) proof fn lemma_apply_journal_entries_some_iff_journal_entries_valid(
 pub(super) proof fn lemma_apply_journal_entries_commutes_with_update_bytes(
     s: Seq<u8>,
     entries: Seq<JournalEntry>,
-    journaled_addrs: Set<int>,
+    journaled_addrs: ISet<int>,
     addr: int,
     bytes_to_write: Seq<u8>,
     sm: JournalStaticMetadata,

@@ -25,7 +25,7 @@ impl<L> ListRecoveryMapping<L>
         recommends
             self.list_info.contains_key(list_addr),
     {
-        let new_row_info = Map::<u64, ListRowRecoveryInfo<L>>::new(
+        let new_row_info = IMap::<u64, ListRowRecoveryInfo<L>>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr].head != list_addr,
             |row_addr: u64| self.row_info[row_addr],
         );
@@ -59,7 +59,7 @@ impl<L> ListTableInternalView<L>
         recommends
             self.m.contains_key(list_addr),
     {
-        let new_row_info = Map::<u64, ListRowDisposition>::new(
+        let new_row_info = IMap::<u64, ListRowDisposition>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr),
             |row_addr: u64|
                 if {

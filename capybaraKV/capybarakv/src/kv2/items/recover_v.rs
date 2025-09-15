@@ -26,7 +26,7 @@ pub(super) open spec fn item_recoverable<I>(
 
 pub(super) open spec fn items_recoverable<I>(
     s: Seq<u8>,
-    addrs: Set<u64>,
+    addrs: ISet<u64>,
     sm: ItemTableStaticMetadata,
 ) -> bool
     where
@@ -50,15 +50,15 @@ pub(super) open spec fn recover_item<I>(
 
 pub(super) open spec fn recover_items<I>(
     s: Seq<u8>,
-    addrs: Set<u64>,
+    addrs: ISet<u64>,
     sm: ItemTableStaticMetadata,
-) -> Map::<u64, I>
+) -> IMap::<u64, I>
     where
         I: PmCopy,
     recommends
         items_recoverable::<I>(s, addrs, sm),
 {
-    Map::<u64, I>::new(
+    IMap::<u64, I>::new(
         |addr: u64| addrs.contains(addr),
         |addr: u64| recover_item::<I>(s, addr, sm),
     )
@@ -86,7 +86,7 @@ where
     proof fn lemma_recover_depends_only_on_my_area_if_valid(
         s1: Seq<u8>,
         s2: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ItemTableStaticMetadata,
     )
         requires
@@ -105,7 +105,7 @@ where
     pub proof fn lemma_recover_depends_only_on_my_area(
         s1: Seq<u8>,
         s2: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ItemTableStaticMetadata,
     )
         requires

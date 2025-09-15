@@ -68,7 +68,7 @@ pub trait ReadLinearizer<K, I, L, Op: ReadOnlyOperation<K, I, L>> : Sized
 {
     type Completion;
 
-    spec fn namespaces(self) -> Set<int>;
+    spec fn namespaces(self) -> ISet<int>;
 
     spec fn pre(self, id: int, op: Op) -> bool;
 
@@ -101,7 +101,7 @@ pub trait MutatingOperation<K, I, L>: Sized
     ) -> bool;
 }
 
-pub open spec fn map_optset<K, V>(m: Map<K, V>, k: K, v: Option<V>) -> Map<K, V> {
+pub open spec fn map_optset<K, V>(m: IMap<K, V>, k: K, v: Option<V>) -> IMap<K, V> {
     match v {
         Some(v) => m.insert(k, v),
         None => m.remove(k),
@@ -138,7 +138,7 @@ pub trait MutatingLinearizer<K, I, L, Op: MutatingOperation<K, I, L>> : Sized
 {
     type Completion;
 
-    spec fn namespaces(self) -> Set<int>;
+    spec fn namespaces(self) -> ISet<int>;
 
     spec fn pre(self, id: int, op: Op) -> bool;
 
@@ -417,7 +417,7 @@ where
     {
         match result {
             Ok(keys) => {
-                &&& keys@.to_set() == ckv.kv.get_keys()
+                &&& keys@.to_set().to_infinite() == ckv.kv.get_keys()
                 &&& keys@.no_duplicates()
             },
             Err(KvError::CRCMismatch) => !ckv.pm_constants.impervious_to_corruption(),

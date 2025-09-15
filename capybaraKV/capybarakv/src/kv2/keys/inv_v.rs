@@ -59,10 +59,10 @@ impl<K> KeyRowDisposition<K>
 #[verifier::reject_recursive_types(K)]
 #[verifier::ext_equal]
 pub struct KeyMemoryMapping<K> {
-    pub row_info: Map<u64, KeyRowDisposition<K>>,
-    pub key_info: Map<K, u64>,
-    pub item_info: Map<u64, u64>,
-    pub list_info: Map<u64, u64>,
+    pub row_info: IMap<u64, KeyRowDisposition<K>>,
+    pub key_info: IMap<K, u64>,
+    pub item_info: IMap<u64, u64>,
+    pub list_info: IMap<u64, u64>,
 }
 
 impl<K> KeyMemoryMapping<K>
@@ -72,10 +72,10 @@ impl<K> KeyMemoryMapping<K>
     pub(super) open spec fn new() -> Self
     {
         Self{
-            row_info: Map::<u64, KeyRowDisposition<K>>::empty(),
-            key_info: Map::<K, u64>::empty(),
-            item_info: Map::<u64, u64>::empty(),
-            list_info: Map::<u64, u64>::empty(),
+            row_info: IMap::<u64, KeyRowDisposition<K>>::empty(),
+            key_info: IMap::<K, u64>::empty(),
+            item_info: IMap::<u64, u64>::empty(),
+            list_info: IMap::<u64, u64>::empty(),
         }
     }
 
@@ -199,22 +199,22 @@ impl<K> KeyMemoryMapping<K>
     pub(super) open spec fn as_recovery_mapping(self) -> KeyRecoveryMapping<K>
     {
         KeyRecoveryMapping::<K>{
-            row_info: Map::<u64, Option<(K, KeyTableRowMetadata)>>::new(
+            row_info: IMap::<u64, Option<(K, KeyTableRowMetadata)>>::new(
                 |row_addr: u64| self.row_info.contains_key(row_addr),
                 |row_addr: u64| match self.row_info[row_addr] {
                     KeyRowDisposition::InHashTable{ k, rm } => Some((k, rm)),
                     _ => None,
                 },
             ),
-            key_info: Map::<K, u64>::new(
+            key_info: IMap::<K, u64>::new(
                 |k: K| self.key_info.contains_key(k),
                 |k: K| self.key_info[k] as u64,
             ),
-            item_info: Map::<u64, u64>::new(
+            item_info: IMap::<u64, u64>::new(
                 |item_addr: u64| self.item_info.contains_key(item_addr),
                 |item_addr: u64| self.item_info[item_addr] as u64,
             ),
-            list_info: Map::<u64, u64>::new(
+            list_info: IMap::<u64, u64>::new(
                 |list_addr: u64| self.list_info.contains_key(list_addr),
                 |list_addr: u64| self.list_info[list_addr] as u64,
             ),
@@ -224,15 +224,15 @@ impl<K> KeyMemoryMapping<K>
     pub(super) open spec fn as_snapshot(self) -> KeyTableSnapshot<K>
     {
         KeyTableSnapshot::<K>{
-            key_info: Map::<K, KeyTableRowMetadata>::new(
+            key_info: IMap::<K, KeyTableRowMetadata>::new(
                 |k: K| self.key_info.contains_key(k),
                 |k: K| self.row_info[self.key_info[k]]->rm,
             ),
-            item_info: Map::<u64, K>::new(
+            item_info: IMap::<u64, K>::new(
                 |item_addr: u64| self.item_info.contains_key(item_addr),
                 |item_addr: u64| self.row_info[self.item_info[item_addr]]->k
             ),
-            list_info: Map::<u64, K>::new(
+            list_info: IMap::<u64, K>::new(
                 |list_addr: u64| self.list_info.contains_key(list_addr),
                 |list_addr: u64| self.row_info[self.list_info[list_addr]]->k
             ),
@@ -461,18 +461,18 @@ impl<K> KeyMemoryMapping<K>
             assert(self.row_info.contains_key(free_list[pos]));
         }
 
-        let free_row_addrs = Set::<u64>::new(
+        let free_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is InFreeList
         );
-        let key_row_addrs = Set::<u64>::new(
+        let key_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is InHashTable
         );
-        let valid_row_addrs = Set::<u64>::new(
+        let valid_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr)
         );
 
         assert(valid_row_addrs.finite() && valid_row_addrs.len() == sm.table.num_rows) by {
-            assert(valid_row_addrs =~= Set::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
+            assert(valid_row_addrs =~= ISet::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
             sm.table.lemma_valid_row_set_len();
         }
         assert(free_row_addrs.finite()) by {
@@ -484,12 +484,12 @@ impl<K> KeyMemoryMapping<K>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + key_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(key_row_addrs));
-            assert(free_row_addrs + key_row_addrs =~= valid_row_addrs);
+            assert(free_row_addrs.generic_union(key_row_addrs) =~= valid_row_addrs);
             vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, key_row_addrs);
         }
 
         assert(free_row_addrs.len() == free_list.len()) by {
-            assert(free_list.to_set() =~= free_row_addrs);
+            assert(free_list.to_set().to_infinite() =~= free_row_addrs);
             free_list.unique_seq_to_set();
         }
 
@@ -509,7 +509,7 @@ impl<K> KeyMemoryMapping<K>
 #[verifier::reject_recursive_types(K)]
 #[verifier::ext_equal]
 pub(super) struct KeyInternalView<K> {
-    pub m: Map<K, ConcreteKeyInfo>,
+    pub m: IMap<K, ConcreteKeyInfo>,
     pub free_list: Seq<u64>,
     pub pending_deallocations: Seq<u64>,
     pub memory_mapping: KeyMemoryMapping<K>,
@@ -535,7 +535,7 @@ impl<K> KeyInternalView<K>
 
     pub(super) open spec fn consistent_with_journaled_addrs(
         self,
-        journaled_addrs: Set<int>,
+        journaled_addrs: ISet<int>,
         sm: KeyTableStaticMetadata
     ) -> bool
     {
@@ -708,7 +708,7 @@ where
     pub(super) open spec fn internal_view(self) -> KeyInternalView<K>
     {
         KeyInternalView::<K>{
-            m: self.m@,
+            m: self.m@.to_infinite(),
             free_list: self.free_list@,
             pending_deallocations: self.pending_deallocations@,
             memory_mapping: self.memory_mapping@,

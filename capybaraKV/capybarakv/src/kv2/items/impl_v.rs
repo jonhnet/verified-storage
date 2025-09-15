@@ -86,7 +86,7 @@ where
     pub(super) status: Ghost<ItemTableStatus>,
     pub(super) sm: ItemTableStaticMetadata,
     pub(super) must_abort: Ghost<bool>,
-    pub(super) row_info: Ghost<Map<u64, ItemRowDisposition<I>>>,
+    pub(super) row_info: Ghost<IMap<u64, ItemRowDisposition<I>>>,
     pub(super) free_list: Vec<u64>,
     pub(super) pending_allocations: Vec<u64>,
     pub(super) pending_deallocations: Vec<u64>,
@@ -116,7 +116,7 @@ where
     
     pub open(super) spec fn recover(
         s: Seq<u8>,
-        addrs: Set<u64>,
+        addrs: ISet<u64>,
         sm: ItemTableStaticMetadata,
     ) -> Option<ItemTableSnapshot<I>>
     {
@@ -150,7 +150,7 @@ where
     pub open spec fn state_equivalent_for_me(
         s: Seq<u8>,
         durable_state: Seq<u8>,
-        item_addrs: Set<u64>,
+        item_addrs: ISet<u64>,
         constants: JournalConstants,
         sm: ItemTableStaticMetadata
     ) -> bool

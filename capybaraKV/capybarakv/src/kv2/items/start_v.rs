@@ -28,24 +28,24 @@ where
             journal.valid(),
             journal.recover_idempotent(),
             journal@.valid(),
-            journal@.journaled_addrs == Set::<int>::empty(),
+            journal@.journaled_addrs == ISet::<int>::empty(),
             journal@.durable_state == journal@.read_state,
             journal@.read_state == journal@.commit_state,
             journal@.constants.app_area_start <= sm.start(),
             sm.end() <= journal@.constants.app_area_end,
-            Self::recover(journal@.read_state, item_addrs@, *sm) is Some,
+            Self::recover(journal@.read_state, item_addrs@.to_infinite(), *sm) is Some,
             sm.valid::<I>(),
         ensures
             match result {
                 Ok(items) => {
-                    let recovered_state = Self::recover(journal@.read_state, item_addrs@, *sm).unwrap();
+                    let recovered_state = Self::recover(journal@.read_state, item_addrs@.to_infinite(), *sm).unwrap();
                     &&& items.valid(journal@)
                     &&& items@.sm == *sm
                     &&& recovered_state.m.dom().finite()
                     &&& items@.used_slots == recovered_state.m.dom().len()
                     &&& items@.durable == recovered_state
                     &&& items@.tentative == Some(recovered_state)
-                    &&& recovered_state.m.dom() == item_addrs@
+                    &&& recovered_state.m.dom() == item_addrs@.to_infinite()
                 },
                 Err(KvError::CRCMismatch) => !journal@.pm_constants.impervious_to_corruption(),
                 Err(_) => false,
@@ -55,7 +55,7 @@ where
         // The only thing we have to do here is fill in its free list and initialize
         // other associated data structures.
 
-        let ghost mut row_info = Map::<u64, ItemRowDisposition<I>>::empty();
+        let ghost mut row_info = IMap::<u64, ItemRowDisposition<I>>::empty();
         let mut free_list: Vec<u64> = Vec::new();
         let mut row_index: u64 = 0;
         let mut row_addr: u64 = sm.table.start;
@@ -66,7 +66,7 @@ where
 
         while row_index < sm.table.num_rows
             invariant
-                Self::recover(journal@.read_state, item_addrs@, *sm) is Some,
+                Self::recover(journal@.read_state, item_addrs@.to_infinite(), *sm) is Some,
                 sm.valid::<I>(),
                 0 <= row_index <= sm.table.num_rows,
                 sm.table.row_addr_to_index(row_addr) == row_index as int,
@@ -117,13 +117,68 @@ where
             }
             else {
                 proof {
+                    let s = journal@.read_state;
                     let ghost item = recover_item::<I>(journal@.read_state, row_addr, *sm);
+
+                    assert( item == crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap() );
                     row_info = row_info.insert(row_addr, ItemRowDisposition::NowhereFree{ item });
+
+                    let iv = ItemTableInternalView::<I>{
+                        row_info,
+                        free_list: free_list@,
+                        pending_allocations: Seq::<u64>::empty(),
+                        pending_deallocations: Seq::<u64>::empty(),
+                    };
+                    assert(row_info.dom().contains(row_addr));
+
+//                     let start = row_addr + sm.row_item_start;
+//                     let crc_addr = row_addr + sm.row_item_crc_start;
+//                     let object_bytes = crate::common::subrange_v::extract_section(s, start, I::spec_size_of());
+//                     let crc_bytes = crate::common::subrange_v::extract_section(s, crc_addr, u64::spec_size_of());
+//                     assert( I::bytes_parseable(object_bytes) );
+//                     assert( u64::bytes_parseable(crc_bytes) );
+//                     assert( crc_bytes == spec_crc_bytes(object_bytes) );
+
+                    assert( iv.row_info[row_addr].arrow_NowhereFree_item() == item );
+                    assert( Some(iv.row_info[row_addr].arrow_NowhereFree_item()) == Some(item) );
+                    assert( item == crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap() );
+                    assert(
+                        crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap()
+                        == iv.row_info[row_addr].arrow_NowhereFree_item()
+                    );
+
+                    assert(
+                        Some(crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap())
+                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item())
+                    );
+                    assume(false); // TODO(jonh): I'm mystified why these types even line up.
+                    assert(
+                        crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start)
+                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item())
+                    );
                 }
             }
 
             row_index = row_index + 1;
             row_addr = row_addr + sm.table.row_size;
+
+            proof {
+                let iv = ItemTableInternalView::<I>{
+                    row_info,
+                    free_list: free_list@,
+                    pending_allocations: Seq::<u64>::empty(),
+                    pending_deallocations: Seq::<u64>::empty(),
+                };
+                assert( iv.consistent(*sm) );
+                let s = journal@.read_state;
+                assert forall|row_addr: u64| iv.row_info.contains_key(row_addr)
+                    && iv.row_info[row_addr] is NowhereFree
+                    implies
+                    crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start)
+                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item()) by {
+                        }
+                assert( iv.consistent_with_read_state(journal@.read_state, *sm) );
+            }
         }
     
         assert forall|row_addr: u64| #[trigger] sm.table.validate_row_addr(row_addr)
@@ -143,10 +198,10 @@ where
             phantom_pm: Ghost(core::marker::PhantomData),
         };
         
-        let ghost recovered_state = Self::recover(journal@.read_state, item_addrs@, *sm).unwrap();
+        let ghost recovered_state = Self::recover(journal@.read_state, item_addrs@.to_infinite(), *sm).unwrap();
         assert(items@.durable =~= recovered_state);
         assert(items@.tentative == Some(recovered_state));
-        assert(recovered_state.m.dom() =~= item_addrs@);
+        assert(recovered_state.m.dom() =~= item_addrs@.to_infinite());
 
         proof {
             items.internal_view().lemma_corresponds_implication_for_free_list_length(*sm);

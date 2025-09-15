@@ -55,11 +55,11 @@ where
             pm.constants() == old(pm).constants(),
             pm@.valid(),
             pm@.len() == old(pm)@.len(),
-            Self::recover(pm@.read_state, Set::<u64>::empty(), *sm) == Some(ListTableSnapshot::<L>::init()),
+            Self::recover(pm@.read_state, ISet::<u64>::empty(), *sm) == Some(ListTableSnapshot::<L>::init()),
             seqs_match_except_in_range(old(pm)@.read_state, pm@.read_state, sm.table.start as int, sm.table.end as int),
     {
         let ghost mapping = ListRecoveryMapping::<L>::new_empty(sm.table);
-        let ghost list_addrs = Set::<u64>::empty();
+        let ghost list_addrs = ISet::<u64>::empty();
 
         proof {
             assert(mapping.corresponds(pm@.read_state, list_addrs, *sm));
@@ -67,7 +67,7 @@ where
             mapping.lemma_corresponds_implies_equals_new(pm@.read_state, list_addrs, *sm);
         }
 
-        assert(Self::recover(pm@.read_state, Set::<u64>::empty(), *sm) == Some(ListTableSnapshot::<L>::init()));
+        assert(Self::recover(pm@.read_state, ISet::<u64>::empty(), *sm) == Some(ListTableSnapshot::<L>::init()));
     }
 
     pub exec fn setup(
@@ -88,7 +88,7 @@ where
             pm@.len() == old(pm)@.len(),
             match result {
                 Ok(sm) => {
-                    &&& Self::recover(pm@.read_state, Set::<u64>::empty(), sm) == Some(ListTableSnapshot::<L>::init())
+                    &&& Self::recover(pm@.read_state, ISet::<u64>::empty(), sm) == Some(ListTableSnapshot::<L>::init())
                     &&& seqs_match_except_in_range(old(pm)@.read_state, pm@.read_state, sm.start() as int, sm.end() as int)
                     &&& sm.valid::<L>()
                     &&& min_start <= sm.start() <= sm.end() <= max_end

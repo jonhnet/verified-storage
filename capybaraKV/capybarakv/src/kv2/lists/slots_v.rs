@@ -7,6 +7,7 @@ use super::impl_v::*;
 use super::inv_v::*;
 use super::super::spec_t::*;
 use vstd::set_lib::*;
+use vstd::set::*;
 
 verus! {
 
@@ -27,13 +28,13 @@ impl<L> ListTableInternalView<L>
             self.pending_allocations == Seq::<u64>::empty(),
             self.pending_deallocations == Seq::<u64>::empty(),
             self.durable_mapping.as_snapshot().m.dom().finite(),
-            0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_seq().len(),
+            0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_finite().to_seq().len(),
         ensures
             ({
                 let m = self.durable_mapping.as_snapshot().m;
-                let s = m.dom().to_seq();
+                let s = m.dom().to_finite().to_seq();
                 let prefix = s.take(pos);
-                let tups = Set::<(u64, int)>::new(|tup: (u64, int)| {
+                let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
                     let (head, i) = tup;
                     &&& prefix.contains(head)
                     &&& 0 <= i < m[head].len()
@@ -45,9 +46,9 @@ impl<L> ListTableInternalView<L>
             pos,
     {
         let m = self.durable_mapping.as_snapshot().m;
-        let s = m.dom().to_seq();
+        let s = m.dom().to_finite().to_seq();
         let prefix = s.take(pos);
-        let tups = Set::<(u64, int)>::new(|tup: (u64, int)| {
+        let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
             let (head, i) = tup;
             &&& prefix.contains(head)
             &&& 0 <= i < m[head].len()
@@ -55,20 +56,21 @@ impl<L> ListTableInternalView<L>
         let f = |total: int, head: u64| total + m[head].len();
         lemma_set_to_seq_has_same_length_with_no_duplicates(m.dom());
         if pos > 0 {
-            let tups_prev = Set::<(u64, int)>::new(|tup: (u64, int)| {
+            let tups_prev = ISet::<(u64, int)>::new(|tup: (u64, int)| {
                 let (head, i) = tup;
                 &&& s.take(pos - 1).contains(head)
                 &&& 0 <= i < m[head].len()
             });
-            let tups_cur = Set::<(u64, int)>::new(|tup: (u64, int)| {
+            let tups_cur = ISet::<(u64, int)>::new(|tup: (u64, int)| {
                 let (head, i) = tup;
                 &&& head == s[pos - 1]
                 &&& 0 <= i < m[head].len()
             });
             assert(tups_cur.finite() && tups_cur.len() == m[s[pos - 1]].len()) by {
-                lemma_int_range(0, m[s[pos - 1]].len() as int);
+//     now broadcast as range_set_properties
+//                 lemma_int_range(0, m[s[pos - 1]].len() as int);
                 lemma_bijection_makes_sets_have_equal_size(
-                    set_int_range(0, m[s[pos - 1]].len() as int),
+                    int::range_iset(0, m[s[pos - 1]].len() as int),
                     tups_cur,
                     |i: int| (s[pos - 1], i),
                     |tup: (u64, int)| tup.1
@@ -96,7 +98,7 @@ impl<L> ListTableInternalView<L>
         }
         else {
             assert(prefix =~= Seq::<u64>::empty());
-            assert(tups =~= Set::<(u64, int)>::empty());
+            assert(tups =~= ISet::<(u64, int)>::empty());
         }
     }
 
@@ -112,7 +114,7 @@ impl<L> ListTableInternalView<L>
             ({
                 let m = self.durable_mapping.as_snapshot().m;
                 &&& m.dom().finite()
-                &&& m.dom().to_seq().fold_left(0, |total: int, head: u64| total + m[head].len())
+                &&& m.dom().to_finite().to_seq().fold_left(0, |total: int, head: u64| total + m[head].len())
                        == sm.table.num_rows - self.free_list.len()
             }),
     {
@@ -125,25 +127,25 @@ impl<L> ListTableInternalView<L>
             assert(self.row_info.contains_key(self.free_list[pos]));
         }
 
-        let free_row_addrs = Set::<u64>::new(
+        let free_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is InFreeList
         );
-        let list_row_addrs = Set::<u64>::new(
+        let list_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is NowhereFree
         );
-        let valid_row_addrs = Set::<u64>::new(
+        let valid_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr)
         );
-        let list_head_addrs = Set::<u64>::new(
+        let list_head_addrs = ISet::<u64>::new(
             |row_addr: u64| self.durable_mapping.row_info.contains_key(row_addr) &&
                             self.durable_mapping.row_info[row_addr].pos == 0
         );
 
         assert(m.dom() == self.durable_mapping.list_elements.dom());
-        let list_heads = m.dom().to_seq();
+        let list_heads = m.dom().to_finite().to_seq();
 
         assert(valid_row_addrs.finite() && valid_row_addrs.len() == sm.table.num_rows) by {
-            assert(valid_row_addrs =~= Set::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
+            assert(valid_row_addrs =~= ISet::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
             sm.table.lemma_valid_row_set_len();
         }
         assert(free_row_addrs.finite()) by {
@@ -164,11 +166,11 @@ impl<L> ListTableInternalView<L>
         }
 
         assert(free_row_addrs.len() == self.free_list.len()) by {
-            assert(self.free_list.to_set() =~= free_row_addrs);
+            assert(self.free_list.to_set().to_infinite() =~= free_row_addrs);
             self.free_list.unique_seq_to_set();
         }
 
-        let tups = Set::<(u64, int)>::new(|tup: (u64, int)| {
+        let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
             let (head, i) = tup;
             &&& list_heads.contains(head)
             &&& 0 <= i < m[head].len()

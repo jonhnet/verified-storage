@@ -22,9 +22,9 @@ pub struct KeyTableRowMetadata
 #[verifier::ext_equal]
 pub struct KeyTableSnapshot<K>
 {
-    pub key_info: Map<K, KeyTableRowMetadata>,
-    pub item_info: Map<u64, K>,
-    pub list_info: Map<u64, K>,
+    pub key_info: IMap<K, KeyTableRowMetadata>,
+    pub item_info: IMap<u64, K>,
+    pub list_info: IMap<u64, K>,
 }
 
 impl<K> KeyTableSnapshot<K>
@@ -32,9 +32,9 @@ impl<K> KeyTableSnapshot<K>
     pub open spec fn init() -> Self
     {
         Self{
-            key_info: Map::<K, KeyTableRowMetadata>::empty(),
-            item_info: Map::<u64, K>::empty(),
-            list_info: Map::<u64, K>::empty(),
+            key_info: IMap::<K, KeyTableRowMetadata>::empty(),
+            item_info: IMap::<u64, K>::empty(),
+            list_info: IMap::<u64, K>::empty(),
         }
     }
 
@@ -75,12 +75,12 @@ impl<K> KeyTableSnapshot<K>
         &&& self.list_info_valid()
     }
 
-    pub open spec fn item_addrs(self) -> Set<u64>
+    pub open spec fn item_addrs(self) -> ISet<u64>
     {
         self.item_info.dom()
     }
 
-    pub open spec fn list_addrs(self) -> Set<u64>
+    pub open spec fn list_addrs(self) -> ISet<u64>
     {
         self.list_info.dom()
     }

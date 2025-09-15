@@ -32,7 +32,7 @@ pub(super) struct ItemTableInternalView<I>
     where
         I: PmCopy + Sized + std::fmt::Debug,
 {
-    pub row_info: Map<u64, ItemRowDisposition<I>>,
+    pub row_info: IMap<u64, ItemRowDisposition<I>>,
     pub free_list: Seq<u64>,
     pub pending_allocations: Seq<u64>,
     pub pending_deallocations: Seq<u64>,
@@ -159,7 +159,7 @@ impl<I> ItemTableInternalView<I>
     pub(super) open spec fn as_durable_snapshot(self) -> ItemTableSnapshot<I>
     {
         ItemTableSnapshot::<I>{
-            m: Map::<u64, I>::new(
+            m: IMap::<u64, I>::new(
                 |row_addr: u64| {
                     &&& self.row_info.contains_key(row_addr)
                     &&& self.row_info[row_addr] is NowhereFree ||
@@ -177,7 +177,7 @@ impl<I> ItemTableInternalView<I>
     pub(super) open spec fn as_tentative_snapshot(self) -> ItemTableSnapshot<I>
     {
         ItemTableSnapshot::<I>{
-            m: Map::<u64, I>::new(
+            m: IMap::<u64, I>::new(
                 |row_addr: u64| {
                     &&& self.row_info.contains_key(row_addr)
                     &&& self.row_info[row_addr] is NowhereFree ||
@@ -208,18 +208,18 @@ impl<I> ItemTableInternalView<I>
             assert(self.row_info.contains_key(self.free_list[pos]));
         }
 
-        let free_row_addrs = Set::<u64>::new(
+        let free_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is InFreeList
         );
-        let item_row_addrs = Set::<u64>::new(
+        let item_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr) && self.row_info[row_addr] is NowhereFree
         );
-        let valid_row_addrs = Set::<u64>::new(
+        let valid_row_addrs = ISet::<u64>::new(
             |row_addr: u64| self.row_info.contains_key(row_addr)
         );
 
         assert(valid_row_addrs.finite() && valid_row_addrs.len() == sm.table.num_rows) by {
-            assert(valid_row_addrs =~= Set::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
+            assert(valid_row_addrs =~= ISet::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
             sm.table.lemma_valid_row_set_len();
         }
         assert(free_row_addrs.finite()) by {
@@ -231,12 +231,12 @@ impl<I> ItemTableInternalView<I>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + item_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(item_row_addrs));
-            assert(free_row_addrs + item_row_addrs =~= valid_row_addrs);
+            assert(free_row_addrs.generic_union(item_row_addrs) =~= valid_row_addrs);
             vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, item_row_addrs);
         }
 
         assert(free_row_addrs.len() == self.free_list.len()) by {
-            assert(self.free_list.to_set() =~= free_row_addrs);
+            assert(self.free_list.to_set().to_infinite() =~= free_row_addrs);
             self.free_list.unique_seq_to_set();
         }
 

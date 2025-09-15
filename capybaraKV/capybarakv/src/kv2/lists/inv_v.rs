@@ -124,9 +124,9 @@ pub(super) struct ListTableInternalView<L>
     pub status: ListTableStatus,
     pub durable_mapping: ListRecoveryMapping<L>,
     pub tentative_mapping: ListRecoveryMapping<L>,
-    pub row_info: Map<u64, ListRowDisposition>,
-    pub m: Map<u64, ListTableEntryView<L>>,
-    pub deletes_inverse: Map<u64, nat>,
+    pub row_info: IMap<u64, ListRowDisposition>,
+    pub m: IMap<u64, ListTableEntryView<L>>,
+    pub deletes_inverse: IMap<u64, nat>,
     pub deletes: Seq<ListSummary>,
     pub modifications: Seq<Option<u64>>,
     pub free_list: Seq<u64>,
@@ -301,7 +301,7 @@ impl<L> ListTableInternalView<L>
 
     pub(super) open spec fn consistent_with_journaled_addrs(
         self,
-        journaled_addrs: Set<int>,
+        journaled_addrs: ISet<int>,
         sm: ListTableStaticMetadata
     ) -> bool
     {
@@ -437,7 +437,7 @@ where
             durable_mapping: self.durable_mapping@,
             tentative_mapping: self.tentative_mapping@,
             row_info: self.row_info@,
-            m: self.m@.map_values(|e: ListTableEntry<L>| e@),
+            m: self.m@.to_infinite().map_values(|e: ListTableEntry<L>| e@),
             deletes_inverse: self.deletes_inverse@,
             deletes: self.deletes@,
             modifications: self.modifications@,

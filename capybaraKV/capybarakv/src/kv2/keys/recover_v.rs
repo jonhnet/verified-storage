@@ -19,10 +19,10 @@ pub struct KeyRecoveryMapping<K>
     where
         K: Hash + Eq + Clone + PmCopy + std::fmt::Debug,
 {
-    pub row_info: Map<u64, Option<(K, KeyTableRowMetadata)>>,
-    pub key_info: Map<K, u64>,
-    pub item_info: Map<u64, u64>,
-    pub list_info: Map<u64, u64>,
+    pub row_info: IMap<u64, Option<(K, KeyTableRowMetadata)>>,
+    pub key_info: IMap<K, u64>,
+    pub item_info: IMap<u64, u64>,
+    pub list_info: IMap<u64, u64>,
 }
 
 impl<K> KeyRecoveryMapping<K>
@@ -41,15 +41,15 @@ impl<K> KeyRecoveryMapping<K>
 
     pub(super) open spec fn new_empty(tm: TableMetadata) -> Self
     {
-        let row_info = Map::<u64, Option<(K, KeyTableRowMetadata)>>::new(
+        let row_info = IMap::<u64, Option<(K, KeyTableRowMetadata)>>::new(
             |addr: u64| tm.validate_row_addr(addr),
             |addr: u64| None,
         );
         Self{
             row_info,
-            key_info: Map::<K, u64>::empty(),
-            item_info: Map::<u64, u64>::empty(),
-            list_info: Map::<u64, u64>::empty(),
+            key_info: IMap::<K, u64>::empty(),
+            item_info: IMap::<u64, u64>::empty(),
+            list_info: IMap::<u64, u64>::empty(),
         }
     }
     
@@ -125,15 +125,15 @@ impl<K> KeyRecoveryMapping<K>
     pub(super) open spec fn as_snapshot(self) -> KeyTableSnapshot<K>
     {
         KeyTableSnapshot::<K>{
-            key_info: Map::<K, KeyTableRowMetadata>::new(
+            key_info: IMap::<K, KeyTableRowMetadata>::new(
                 |k: K| self.key_info.contains_key(k),
                 |k: K| self.row_info[self.key_info[k]].unwrap().1,
             ),
-            item_info: Map::<u64, K>::new(
+            item_info: IMap::<u64, K>::new(
                 |item_addr: u64| self.item_info.contains_key(item_addr),
                 |item_addr: u64| self.row_info[self.item_info[item_addr]].unwrap().0,
             ),
-            list_info: Map::<u64, K>::new(
+            list_info: IMap::<u64, K>::new(
                 |list_addr: u64| self.list_info.contains_key(list_addr),
                 |list_addr: u64| self.row_info[self.list_info[list_addr]].unwrap().0,
             ),

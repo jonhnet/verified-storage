@@ -139,7 +139,7 @@ impl<L> ListTableInternalView<L>
         let next_addr = if idx == old_addrs.len() - 1 { 0 } else { old_addrs[idx + 1] };
         let prev_addr = if idx == 0 { 0 } else { old_addrs[idx - 1] };
 
-        let new_row_info = Map::<u64, ListRowRecoveryInfo<L>>::new(
+        let new_row_info = IMap::<u64, ListRowRecoveryInfo<L>>::new(
             |row_addr: u64| {
                 ||| row_addr == new_row_addr
                 ||| {
@@ -733,7 +733,7 @@ where
                 }
                 &&& journal@.journaled_addrs ==
                     old(journal)@.journaled_addrs +
-                    Set::<int>::new(|i: int| prev_row_addr + self.sm.row_next_start <= i
+                    ISet::<int>::new(|i: int| prev_row_addr + self.sm.row_next_start <= i
                                   < prev_row_addr + self.sm.row_next_start + u64::spec_size_of() + u64::spec_size_of())
             } else {
                 &&& forall|other_row_addr: u64| {
@@ -922,7 +922,7 @@ where
                 }
                 &&& new_jv.journaled_addrs ==
                     old_jv.journaled_addrs +
-                    Set::<int>::new(|i: int| prev_row_addr + sm.row_next_start <= i
+                    ISet::<int>::new(|i: int| prev_row_addr + sm.row_next_start <= i
                                   < prev_row_addr + sm.row_next_start + u64::spec_size_of() + u64::spec_size_of())
             } else {
                 &&& forall|other_row_addr: u64| {

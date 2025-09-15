@@ -41,7 +41,7 @@ where
             self@.used_slots == self@.durable.m.dom().len(),
     {
         let ghost new_row_info =
-            Map::<u64, ItemRowDisposition<I>>::new(
+            IMap::<u64, ItemRowDisposition<I>>::new(
                 |row_addr: u64| self.row_info@.contains_key(row_addr),
                 |row_addr: u64| match self.row_info@[row_addr] {
                     ItemRowDisposition::<I>::InPendingAllocationList{ pos, item } =>
