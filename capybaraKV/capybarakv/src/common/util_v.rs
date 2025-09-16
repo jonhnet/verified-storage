@@ -210,17 +210,41 @@ pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: ISet<A>, v: A)
     requires
         s.finite(),
     ensures
-        s.contains(v) <==> s.to_finite().to_seq().contains(v),
+        s.contains(v) <==> s.to_seq().contains(v),
     decreases
         s.len(),
 {
+    s.lemma_to_seq_to_iset_id();
     lemma_set_to_seq_contains_iff_set_contains_finite(s.to_finite(), v);
 }
 
 // TODO(jonh discuss): This should also move into vstd.
 // Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
 // and has no duplicates.
-pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates_finite<A>(s: Set<A>)
+// pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates_finite<A>(s: Set<A>)
+//     ensures
+//         s.to_seq().len() == s.len(),
+//         s.to_seq().no_duplicates(),
+//     decreases
+//         s.len(),
+// {
+//     let q = s.to_seq();
+//     if s.len() != 0 {
+//         let x = s.choose();
+//         lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.remove(x));
+//         assert(!s.remove(x).to_seq().contains(x)) by {
+//             lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), x);
+//         }
+//     }
+//     q.unique_seq_to_set();
+// }
+
+// TODO(jonh discuss): This should also move into vstd.
+// Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
+// and has no duplicates.
+pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: ISet<A>)
+    requires
+        s.finite(),
     ensures
         s.to_seq().len() == s.len(),
         s.to_seq().no_duplicates(),
@@ -230,26 +254,13 @@ pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates_finite<A>(s: Se
     let q = s.to_seq();
     if s.len() != 0 {
         let x = s.choose();
-        lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.remove(x));
+        lemma_set_to_seq_has_same_length_with_no_duplicates(s.remove(x));
         assert(!s.remove(x).to_seq().contains(x)) by {
-            lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), x);
+            lemma_set_to_seq_contains_iff_set_contains(s.remove(x), x);
         }
     }
     q.unique_seq_to_set();
 }
-
-pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: ISet<A>)
-    requires
-        s.finite(),
-    ensures
-        s.to_finite().to_seq().len() == s.len(),
-        s.to_finite().to_seq().no_duplicates(),
-    decreases
-        s.len(),
-{
-    lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.to_finite());
-}
-
 
 // Prove that if there exists a bijection between two sets `s1` and `s2`,
 // where `s1` is known to be finite, then `s2` is also finite and
@@ -276,7 +287,7 @@ pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
     // * `q1` has the same length as `s1`.
     // * `q1` has no duplicates. 
 
-    let q1 = s1.to_finite().to_seq();
+    let q1 = s1.to_seq();
     assert forall|x: A| #[trigger] q1.contains(x) <==> s1.contains(x) by {
         lemma_set_to_seq_contains_iff_set_contains(s1, x);
     }

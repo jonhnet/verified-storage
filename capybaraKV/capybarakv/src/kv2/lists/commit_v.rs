@@ -178,7 +178,7 @@ where
                 let m = self@.durable.m;
                 &&& m.dom().finite()
                 &&& self@.used_slots ==
-                       m.dom().to_finite().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
+                       m.dom().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
             }),
     {
         let ghost new_iv = self.internal_view().commit();

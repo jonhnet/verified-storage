@@ -22,11 +22,11 @@ where
     pub(super) proof fn lemma_filtering_keys_doesnt_affect_fold(self, pos: int)
         requires
             self@.durable.m.dom().finite(),
-            0 <= pos <= self@.durable.m.dom().to_finite().to_seq().len(),
+            0 <= pos <= self@.durable.m.dom().to_seq().len(),
         ensures
             ({
                 let m = self@.durable.m;
-                let kseq = m.dom().to_finite().to_seq();
+                let kseq = m.dom().to_seq();
                 let kseq_truncated = kseq.take(pos);
                 let kseq_truncated_and_filtered =
                     kseq_truncated.filter(|k: K| self.keys@.durable.key_info[k].list_addr != 0);
@@ -40,7 +40,7 @@ where
         let items = self.items@.durable;
         let lists = self.lists@.durable;
         let m = self@.durable.m;
-        let kseq = m.dom().to_finite().to_seq();
+        let kseq = m.dom().to_seq();
         let kseq_truncated = kseq.take(pos);
         let filt = |k: K| keys.key_info[k].list_addr != 0;
 
@@ -78,7 +78,7 @@ where
             self.keys@.durable.valid(),
         ensures
             self@.durable.num_list_elements() ==
-                self.lists@.durable.m.dom().to_finite().to_seq().fold_left(
+                self.lists@.durable.m.dom().to_seq().fold_left(
                     0, |total: int, row_addr: u64| total + self.lists@.durable.m[row_addr].len()
                 ),
     {
@@ -86,15 +86,15 @@ where
         let items = self.items@.durable;
         let lists = self.lists@.durable;
         let m = self@.durable.m;
-        let list_addr_seq = lists.m.dom().to_finite().to_seq();
+        let list_addr_seq = lists.m.dom().to_seq();
         let accumulate_row_addr = |total: int, row_addr: u64| total + lists.m[row_addr].len();
         let list_used_slots = list_addr_seq.fold_left(0, accumulate_row_addr);
         let accumulate_key = |total: int, k: K| total + m[k].1.len();
-        assert(self@.durable.num_list_elements() == m.dom().to_finite().to_seq().fold_left(0, accumulate_key));
+        assert(self@.durable.num_list_elements() == m.dom().to_seq().fold_left(0, accumulate_key));
 
         assert(m.dom() =~= keys.key_info.dom());
 
-        let kseq = m.dom().to_finite().to_seq();
+        let kseq = m.dom().to_seq();
         let key_has_list = |k: K| keys.key_info[k].list_addr != 0;
         let keys_with_lists_seq = kseq.filter(key_has_list);
 
@@ -193,7 +193,7 @@ where
             self@.durable.num_keys() == self.keys@.durable.key_info.dom().len(),
             self@.durable.num_keys() == self.items@.durable.m.dom().len(),
             self@.durable.num_list_elements() ==
-                self.lists@.durable.m.dom().to_finite().to_seq().fold_left(
+                self.lists@.durable.m.dom().to_seq().fold_left(
                     0, |total: int, row_addr: u64| total + self.lists@.durable.m[row_addr].len()
                 ),
     {

@@ -144,7 +144,7 @@ where
             journal@.constants.app_area_start <= sm.start(),
             sm.end() <= journal@.constants.app_area_end,
             sm.valid::<L>(),
-            mapping.corresponds(journal@.read_state, list_addrs@.to_set().to_infinite(), *sm),
+            mapping.corresponds(journal@.read_state, list_addrs@.to_iset(), *sm),
             forall|list_addr: u64| #[trigger] list_addrs@.contains(list_addr)
                 <==> mapping.list_info.contains_key(list_addr),
             !list_addrs@.contains(0),
@@ -183,7 +183,7 @@ where
                 sm.valid::<L>(),
                 !list_addrs@.contains(0),
                 num_lists == list_addrs.len(),
-                mapping.corresponds(journal@.read_state, list_addrs@.to_set().to_infinite(), *sm),
+                mapping.corresponds(journal@.read_state, list_addrs@.to_iset(), *sm),
                 forall|i: int, j: int| #![trigger mapping.list_info[list_addrs@[i]][j]] 0 <= i < which_list ==> {
                     let row_addrs = mapping.list_info[list_addrs@[i]];
                     &&& mapping.list_info.contains_key(list_addrs@[i])
@@ -214,7 +214,7 @@ where
             let list_addr = list_addrs[which_list];
             assert(list_addrs@.to_set().contains(list_addr));
             assert(mapping.list_info.contains_key(list_addr));
-            match Self::read_list(journal, sm, Ghost(list_addrs@.to_set().to_infinite()), Ghost(mapping),
+            match Self::read_list(journal, sm, Ghost(list_addrs@.to_iset()), Ghost(mapping),
                                   &mut row_addrs_used, list_addr) {
                 Ok(summary) => { m.insert(list_addr, ListTableEntry::Durable{ summary }); },
                 Err(e) => return Err(e),
@@ -339,14 +339,14 @@ where
             journal@.constants.app_area_start <= sm.start(),
             sm.end() <= journal@.constants.app_area_end,
             0 < sm.start(), // so that `0` isn't a valid address and can be used as a sentinel
-            Self::recover(journal@.read_state, list_addrs@.to_set().to_infinite(), *sm) is Some,
+            Self::recover(journal@.read_state, list_addrs@.to_iset(), *sm) is Some,
             sm.valid::<L>(),
             !list_addrs@.contains(0),
         ensures
             match result {
                 Ok(lists) => {
                     let recovered_state =
-                        Self::recover(journal@.read_state, list_addrs@.to_set().to_infinite(), *sm).unwrap();
+                        Self::recover(journal@.read_state, list_addrs@.to_iset(), *sm).unwrap();
                     let m = recovered_state.m;
                     &&& lists.valid(journal@)
                     &&& lists@.sm == *sm
@@ -356,15 +356,15 @@ where
                            m.dom().to_finite().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
                     &&& lists@.durable == recovered_state
                     &&& lists@.tentative == Some(recovered_state)
-                    &&& recovered_state.m.dom() == list_addrs@.to_set().to_infinite()
+                    &&& recovered_state.m.dom() == list_addrs@.to_iset()
                 },
                 Err(KvError::CRCMismatch) => !journal@.pm_constants.impervious_to_corruption(),
                 Err(_) => false,
             }
     {
-        let ghost mapping = ListRecoveryMapping::<L>::new(journal@.read_state, list_addrs@.to_set().to_infinite().to_infinite(), *sm).unwrap();
+        let ghost mapping = ListRecoveryMapping::<L>::new(journal@.read_state, list_addrs@.to_iset().to_infinite(), *sm).unwrap();
         assert(forall|list_addr: u64|
-               #[trigger] list_addrs@.contains(list_addr) <==> list_addrs@.to_set().to_infinite().contains(list_addr));
+               #[trigger] list_addrs@.contains(list_addr) <==> list_addrs@.to_iset().contains(list_addr));
         let (row_addrs_used, m) = match Self::read_all_lists(journal, sm, list_addrs, Ghost(mapping)) {
             Ok(rm) => rm,
             Err(e) => { return Err(e); },
@@ -394,8 +394,8 @@ where
             phantom_pm: Ghost(core::marker::PhantomData),
         };
 
-        let ghost recovered_state = Self::recover(journal@.read_state, list_addrs@.to_set().to_infinite(), *sm).unwrap();
-        assert(recovered_state.m.dom() =~= list_addrs@.to_set().to_infinite());
+        let ghost recovered_state = Self::recover(journal@.read_state, list_addrs@.to_iset(), *sm).unwrap();
+        assert(recovered_state.m.dom() =~= list_addrs@.to_iset());
 
         proof {
             lists.internal_view().lemma_corresponds_implication_for_free_list_length(*sm);

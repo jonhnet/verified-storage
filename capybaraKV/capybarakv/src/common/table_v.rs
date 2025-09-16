@@ -182,8 +182,8 @@ impl TableMetadata
         }
 
         // Second, we prove that if you convert that sequence to a set, you get the set of valid row addresses.
-        assert(rows.to_set().to_infinite() =~= valid_row_addrs) by {
-            assert forall|row_addr: u64| #[trigger] rows.to_set().contains(row_addr)
+        assert(rows.to_iset() =~= valid_row_addrs) by {
+            assert forall|row_addr: u64| #[trigger] rows.to_iset().contains(row_addr)
                        implies valid_row_addrs.contains(row_addr) by {
                 let row_index = choose|row_index: int| 0 <= row_index < rows.len() && rows[row_index] == row_addr;
                 lemma_row_index_to_addr_is_valid(self, row_index);

@@ -720,7 +720,7 @@ where
             self.valid(journal@),
             self@.tentative is Some,
         ensures
-            result@.to_set().to_infinite() == self@.tentative.unwrap().key_info.dom(),
+            result@.to_iset() == self@.tentative.unwrap().key_info.dom(),
             result@.no_duplicates(),
     {
         broadcast use vstd::std_specs::hash::group_hash_axioms;
@@ -737,8 +737,8 @@ where
             result.push(*k);
         }
 
-        assert(result@.to_set().to_infinite() =~= self@.tentative.unwrap().key_info.dom()) by {
-            assert(keys@.1.to_set().to_infinite() == self.m@.dom().to_infinite());
+        assert(result@.to_iset() =~= self@.tentative.unwrap().key_info.dom()) by {
+            assert(keys@.1.to_iset() == self.m@.dom().to_infinite());
             assert(keys@.1.take(keys@.1.len() as int) =~= keys@.1);
             assert(self.m@.to_infinite().dom() =~= self@.tentative.unwrap().key_info.dom());
         }

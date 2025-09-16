@@ -153,7 +153,7 @@ where
 
     pub open spec fn num_list_elements(&self) -> int
     {
-        self.m.dom().to_finite().to_seq().fold_left(0, |total: int, k: K| total + self.m[k].1.len())
+        self.m.dom().to_seq().fold_left(0, |total: int, k: K| total + self.m[k].1.len())
     }
 
     pub open spec fn spec_index(self, key: K) -> Option<(I, Seq<L>)>

@@ -489,7 +489,7 @@ impl<K> KeyMemoryMapping<K>
         }
 
         assert(free_row_addrs.len() == free_list.len()) by {
-            assert(free_list.to_set().to_infinite() =~= free_row_addrs);
+            assert(free_list.to_iset() =~= free_row_addrs);
             free_list.unique_seq_to_set();
         }
 

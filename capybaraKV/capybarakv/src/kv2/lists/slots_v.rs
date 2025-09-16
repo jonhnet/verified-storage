@@ -28,11 +28,11 @@ impl<L> ListTableInternalView<L>
             self.pending_allocations == Seq::<u64>::empty(),
             self.pending_deallocations == Seq::<u64>::empty(),
             self.durable_mapping.as_snapshot().m.dom().finite(),
-            0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_finite().to_seq().len(),
+            0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_seq().len(),
         ensures
             ({
                 let m = self.durable_mapping.as_snapshot().m;
-                let s = m.dom().to_finite().to_seq();
+                let s = m.dom().to_seq();
                 let prefix = s.take(pos);
                 let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
                     let (head, i) = tup;
@@ -46,7 +46,7 @@ impl<L> ListTableInternalView<L>
             pos,
     {
         let m = self.durable_mapping.as_snapshot().m;
-        let s = m.dom().to_finite().to_seq();
+        let s = m.dom().to_seq();
         let prefix = s.take(pos);
         let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
             let (head, i) = tup;
@@ -114,7 +114,7 @@ impl<L> ListTableInternalView<L>
             ({
                 let m = self.durable_mapping.as_snapshot().m;
                 &&& m.dom().finite()
-                &&& m.dom().to_finite().to_seq().fold_left(0, |total: int, head: u64| total + m[head].len())
+                &&& m.dom().to_seq().fold_left(0, |total: int, head: u64| total + m[head].len())
                        == sm.table.num_rows - self.free_list.len()
             }),
     {
@@ -142,7 +142,7 @@ impl<L> ListTableInternalView<L>
         );
 
         assert(m.dom() == self.durable_mapping.list_elements.dom());
-        let list_heads = m.dom().to_finite().to_seq();
+        let list_heads = m.dom().to_seq();
 
         assert(valid_row_addrs.finite() && valid_row_addrs.len() == sm.table.num_rows) by {
             assert(valid_row_addrs =~= ISet::<u64>::new(|row_addr: u64| sm.table.validate_row_addr(row_addr)));
@@ -166,7 +166,7 @@ impl<L> ListTableInternalView<L>
         }
 
         assert(free_row_addrs.len() == self.free_list.len()) by {
-            assert(self.free_list.to_set().to_infinite() =~= free_row_addrs);
+            assert(self.free_list.to_iset() =~= free_row_addrs);
             self.free_list.unique_seq_to_set();
         }
 

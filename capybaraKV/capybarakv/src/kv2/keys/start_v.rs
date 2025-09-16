@@ -54,7 +54,7 @@ where
                     &&& recovered_state.key_info.dom().finite()
                     &&& keys@.used_slots == recovered_state.key_info.dom().len()
                     &&& item_addrs@.to_infinite() == recovered_state.item_addrs()
-                    &&& list_addrs@.to_set().to_infinite() == recovered_state.list_addrs()
+                    &&& list_addrs@.to_iset() == recovered_state.list_addrs()
                     &&& !list_addrs@.contains(0)
                 },
                 Err(KvError::CRCMismatch) => !journal@.pm_constants.impervious_to_corruption(),
@@ -246,7 +246,7 @@ where
         let ghost recovered_state = Self::recover(journal@.read_state, *sm).unwrap();
         assert(keys@.durable =~= recovered_state);
         assert(item_addrs@.to_infinite() =~= recovered_state.item_addrs());
-        assert(list_addrs@.to_set().to_infinite() =~= recovered_state.list_addrs());
+        assert(list_addrs@.to_iset() =~= recovered_state.list_addrs());
 
         proof {
             memory_mapping.lemma_corresponds_implication_for_free_list_length(free_list@, *sm);
@@ -264,7 +264,7 @@ where
                 &&& recovered_state.key_info.dom().finite()
                 &&& keys@.used_slots == recovered_state.key_info.dom().len()
                 &&& item_addrs@.to_infinite() == recovered_state.item_addrs()
-                &&& list_addrs@.to_set().to_infinite() == recovered_state.list_addrs()
+                &&& list_addrs@.to_iset() == recovered_state.list_addrs()
                 &&& !list_addrs@.contains(0)
             });
         }

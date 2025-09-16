@@ -417,7 +417,7 @@ where
     {
         match result {
             Ok(keys) => {
-                &&& keys@.to_set().to_infinite() == ckv.kv.get_keys()
+                &&& keys@.to_iset() == ckv.kv.get_keys()
                 &&& keys@.no_duplicates()
             },
             Err(KvError::CRCMismatch) => !ckv.pm_constants.impervious_to_corruption(),
