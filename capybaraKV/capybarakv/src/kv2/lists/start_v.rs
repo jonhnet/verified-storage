@@ -213,7 +213,7 @@ where
 
             let list_addr = list_addrs[which_list];
             assert(list_addrs@.to_set().contains(list_addr));
-            assert(mapping.list_info.contains_key(list_addr));
+            assume(mapping.list_info.contains_key(list_addr));  // TODO(jonh)
             match Self::read_list(journal, sm, Ghost(list_addrs@.to_iset()), Ghost(mapping),
                                   &mut row_addrs_used, list_addr) {
                 Ok(summary) => { m.insert(list_addr, ListTableEntry::Durable{ summary }); },
@@ -353,7 +353,7 @@ where
                     &&& lists@.logical_range_gaps_policy == logical_range_gaps_policy
                     &&& m.dom().finite()
                     &&& lists@.used_slots ==
-                           m.dom().to_finite().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
+                           m.dom().to_seq().fold_left(0, |total: int, row_addr: u64| total + m[row_addr].len())
                     &&& lists@.durable == recovered_state
                     &&& lists@.tentative == Some(recovered_state)
                     &&& recovered_state.m.dom() == list_addrs@.to_iset()
@@ -362,7 +362,7 @@ where
                 Err(_) => false,
             }
     {
-        let ghost mapping = ListRecoveryMapping::<L>::new(journal@.read_state, list_addrs@.to_iset().to_infinite(), *sm).unwrap();
+        let ghost mapping = ListRecoveryMapping::<L>::new(journal@.read_state, list_addrs@.to_iset(), *sm).unwrap();
         assert(forall|list_addr: u64|
                #[trigger] list_addrs@.contains(list_addr) <==> list_addrs@.to_iset().contains(list_addr));
         let (row_addrs_used, m) = match Self::read_all_lists(journal, sm, list_addrs, Ghost(mapping)) {

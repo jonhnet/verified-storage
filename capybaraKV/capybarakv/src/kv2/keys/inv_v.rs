@@ -708,6 +708,8 @@ where
     pub(super) open spec fn internal_view(self) -> KeyInternalView<K>
     {
         KeyInternalView::<K>{
+            // TODO(jonh): this .to_infinite() makes some triggering hassles. An experiment would
+            // be to try leaving it finite. But then we'd need congruent everywhere?
             m: self.m@.to_infinite(),
             free_list: self.free_list@,
             pending_deallocations: self.pending_deallocations@,

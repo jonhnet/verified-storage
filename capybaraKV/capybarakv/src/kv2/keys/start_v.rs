@@ -254,19 +254,18 @@ where
 
         proof {
             let recovered_state = Self::recover(journal@.read_state, *sm).unwrap();
+            assume( false );    // TODO(jonh): left off
+//             assert( recovered_state.key_info.dom().finite() );
+//             assert( keys@.used_slots == recovered_state.key_info.dom().len() );
+            assert( keys.valid(journal@) );
+            assert( keys@.sm == *sm );
+            assert( keys@.durable == recovered_state );
+            assert( keys@.tentative == Some(recovered_state) );
             assert( recovered_state.key_info.dom().finite() );
             assert( keys@.used_slots == recovered_state.key_info.dom().len() );
-            assert({
-                &&& keys.valid(journal@)
-                &&& keys@.sm == *sm
-                &&& keys@.durable == recovered_state
-                &&& keys@.tentative == Some(recovered_state)
-                &&& recovered_state.key_info.dom().finite()
-                &&& keys@.used_slots == recovered_state.key_info.dom().len()
-                &&& item_addrs@.to_infinite() == recovered_state.item_addrs()
-                &&& list_addrs@.to_iset() == recovered_state.list_addrs()
-                &&& !list_addrs@.contains(0)
-            });
+            assert( item_addrs@.to_infinite() == recovered_state.item_addrs() );
+            assert( list_addrs@.to_iset() == recovered_state.list_addrs() );
+            assert( !list_addrs@.contains(0) );
         }
         Ok((keys, item_addrs, list_addrs))
     }

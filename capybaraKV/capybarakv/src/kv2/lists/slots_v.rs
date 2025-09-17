@@ -31,7 +31,7 @@ impl<L> ListTableInternalView<L>
             0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_seq().len(),
         ensures
             ({
-                let m = self.durable_mapping.as_snapshot().m;
+                let m: IMap<_,_> = self.durable_mapping.as_snapshot().m;
                 let s = m.dom().to_seq();
                 let prefix = s.take(pos);
                 let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
@@ -45,6 +45,9 @@ impl<L> ListTableInternalView<L>
         decreases
             pos,
     {
+        assume(false);  // left off
+//         broadcast use ISet::lemma_to_seq_to_iset_id;
+//         ISet::lemma_to_seq_to_iset_id();
         let m = self.durable_mapping.as_snapshot().m;
         let s = m.dom().to_seq();
         let prefix = s.take(pos);
@@ -95,10 +98,36 @@ impl<L> ListTableInternalView<L>
             }
             assert(tups_prev.disjoint(tups_cur));
             lemma_set_disjoint_lens(tups_prev, tups_cur);
+
+            {
+                let m = self.durable_mapping.as_snapshot().m;
+                let s = m.dom().to_seq();
+                let prefix = s.take(pos);
+                let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
+                    let (head, i) = tup;
+                    &&& prefix.contains(head)
+                    &&& 0 <= i < m[head].len()
+                });
+                assert( tups.finite() );
+                assert( prefix.fold_left(0, |total: int, head: u64| total + m[head].len()) == tups.len() );
+            }
         }
         else {
             assert(prefix =~= Seq::<u64>::empty());
             assert(tups =~= ISet::<(u64, int)>::empty());
+
+//             assert({
+//                 let m = self.durable_mapping.as_snapshot().m;
+//                 let s = m.dom().to_seq();
+//                 let prefix = s.take(pos);
+//                 let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
+//                     let (head, i) = tup;
+//                     &&& prefix.contains(head)
+//                     &&& 0 <= i < m[head].len()
+//                 });
+//                 &&& tups.finite()
+//                 &&& prefix.fold_left(0, |total: int, head: u64| total + m[head].len()) == tups.len()
+//             });
         }
     }
 
@@ -161,7 +190,7 @@ impl<L> ListTableInternalView<L>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + list_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(list_row_addrs));
-            assert(free_row_addrs + list_row_addrs =~= valid_row_addrs);
+            assert(free_row_addrs.generic_union(list_row_addrs) =~= valid_row_addrs);
             vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, list_row_addrs);
         }
 

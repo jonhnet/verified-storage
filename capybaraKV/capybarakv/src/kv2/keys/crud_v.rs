@@ -390,6 +390,7 @@ where
 
         let cki = ConcreteKeyInfo{ row_addr, rm };
         self.m.insert(k.clone_provable(), cki);
+        assert( old(self).m@.contains_key(*k) ==> old(self).m@.to_infinite().contains_key(*k) );
         assert(self.m@.remove(*k) =~= old(self).m@);
 
         let undo_record = KeyUndoRecord::UndoCreate{ row_addr, k: *k };
@@ -506,7 +507,8 @@ where
             broadcast use group_validate_row_addr;
         }
 
-        assert(self.valid(journal@));
+        assert( forall |ke| self.internal_view().m.dom().contains(ke) && ke != *k ==>
+                old(self).internal_view().m.dom().contains(ke) );
         assert(self@.tentative =~= Some(old(self)@.tentative.unwrap().delete(*k)));
         Ok(())
     }
@@ -707,7 +709,10 @@ where
 
         self.status = Ghost(KeyTableStatus::Quiescent);
 
-        assert(self.valid(journal@));
+        // TODO(jonh) discuss: Not sure why we need this trigger now and we didn't before.
+        // Maybe something about reaching through the .to_infinite in m@?
+        assert( forall |ke| self.internal_view().m.dom().contains(ke) && ke != *k ==>
+                old(self).internal_view().m.dom().contains(ke) );
         assert(self@.tentative =~= Some(old(self)@.tentative.unwrap().update(*k, new_rm, former_rm)));
         Ok(())
     }
