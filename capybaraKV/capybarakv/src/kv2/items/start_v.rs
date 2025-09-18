@@ -100,6 +100,7 @@ where
             decreases
                 sm.table.num_rows - row_index,
         {
+            let ghost cur_row_addr = row_addr;
             proof {
                 broadcast use group_validate_row_addr;
                 broadcast use pmcopy_axioms;
@@ -117,68 +118,17 @@ where
             }
             else {
                 proof {
-                    let s = journal@.read_state;
+                    assert( item_addrs@.to_infinite().contains(row_addr) ); // trigger contains through to_infinite
+
                     let ghost item = recover_item::<I>(journal@.read_state, row_addr, *sm);
 
-                    assert( item == crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap() );
                     row_info = row_info.insert(row_addr, ItemRowDisposition::NowhereFree{ item });
-
-                    let iv = ItemTableInternalView::<I>{
-                        row_info,
-                        free_list: free_list@,
-                        pending_allocations: Seq::<u64>::empty(),
-                        pending_deallocations: Seq::<u64>::empty(),
-                    };
-                    assert(row_info.dom().contains(row_addr));
-
-//                     let start = row_addr + sm.row_item_start;
-//                     let crc_addr = row_addr + sm.row_item_crc_start;
-//                     let object_bytes = crate::common::subrange_v::extract_section(s, start, I::spec_size_of());
-//                     let crc_bytes = crate::common::subrange_v::extract_section(s, crc_addr, u64::spec_size_of());
-//                     assert( I::bytes_parseable(object_bytes) );
-//                     assert( u64::bytes_parseable(crc_bytes) );
-//                     assert( crc_bytes == spec_crc_bytes(object_bytes) );
-
-                    assert( iv.row_info[row_addr].arrow_NowhereFree_item() == item );
-                    assert( Some(iv.row_info[row_addr].arrow_NowhereFree_item()) == Some(item) );
-                    assert( item == crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap() );
-                    assert(
-                        crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap()
-                        == iv.row_info[row_addr].arrow_NowhereFree_item()
-                    );
-
-                    assert(
-                        Some(crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start).unwrap())
-                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item())
-                    );
-                    assume(false); // TODO(jonh): I'm mystified why these types even line up.
-                    assert(
-                        crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start)
-                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item())
-                    );
                 }
             }
 
             row_index = row_index + 1;
             row_addr = row_addr + sm.table.row_size;
 
-            proof {
-                let iv = ItemTableInternalView::<I>{
-                    row_info,
-                    free_list: free_list@,
-                    pending_allocations: Seq::<u64>::empty(),
-                    pending_deallocations: Seq::<u64>::empty(),
-                };
-                assert( iv.consistent(*sm) );
-                let s = journal@.read_state;
-                assert forall|row_addr: u64| iv.row_info.contains_key(row_addr)
-                    && iv.row_info[row_addr] is NowhereFree
-                    implies
-                    crate::common::recover_v::recover_object::<I>(s, row_addr + sm.row_item_start, row_addr + sm.row_item_crc_start)
-                        == Some(iv.row_info[row_addr].arrow_NowhereFree_item()) by {
-                        }
-                assert( iv.consistent_with_read_state(journal@.read_state, *sm) );
-            }
         }
     
         assert forall|row_addr: u64| #[trigger] sm.table.validate_row_addr(row_addr)
