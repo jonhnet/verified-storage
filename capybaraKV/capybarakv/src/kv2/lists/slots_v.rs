@@ -31,7 +31,7 @@ impl<L> ListTableInternalView<L>
             0 <= pos <= self.durable_mapping.as_snapshot().m.dom().to_seq().len(),
         ensures
             ({
-                let m: IMap<_,_> = self.durable_mapping.as_snapshot().m;
+                let m = self.durable_mapping.as_snapshot().m;
                 let s = m.dom().to_seq();
                 let prefix = s.take(pos);
                 let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
@@ -45,9 +45,6 @@ impl<L> ListTableInternalView<L>
         decreases
             pos,
     {
-        assume(false);  // left off
-//         broadcast use ISet::lemma_to_seq_to_iset_id;
-//         ISet::lemma_to_seq_to_iset_id();
         let m = self.durable_mapping.as_snapshot().m;
         let s = m.dom().to_seq();
         let prefix = s.take(pos);
@@ -70,8 +67,6 @@ impl<L> ListTableInternalView<L>
                 &&& 0 <= i < m[head].len()
             });
             assert(tups_cur.finite() && tups_cur.len() == m[s[pos - 1]].len()) by {
-//     now broadcast as range_set_properties
-//                 lemma_int_range(0, m[s[pos - 1]].len() as int);
                 lemma_bijection_makes_sets_have_equal_size(
                     int::range_iset(0, m[s[pos - 1]].len() as int),
                     tups_cur,
@@ -79,7 +74,9 @@ impl<L> ListTableInternalView<L>
                     |tup: (u64, int)| tup.1
                 );
             }
+
             self.lemma_corresponds_implies_sum_lengths_equals_num_pos_tuples(sm, pos - 1);
+
             assert(prefix.drop_last() == s.take(pos - 1));
             assert(prefix.last() == s[pos - 1]);
             assert(prefix.drop_last().fold_left(0, f) == tups_prev.len());
@@ -96,38 +93,12 @@ impl<L> ListTableInternalView<L>
                     }
                 }
             }
-            assert(tups_prev.disjoint(tups_cur));
             lemma_set_disjoint_lens(tups_prev, tups_cur);
-
-            {
-                let m = self.durable_mapping.as_snapshot().m;
-                let s = m.dom().to_seq();
-                let prefix = s.take(pos);
-                let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
-                    let (head, i) = tup;
-                    &&& prefix.contains(head)
-                    &&& 0 <= i < m[head].len()
-                });
-                assert( tups.finite() );
-                assert( prefix.fold_left(0, |total: int, head: u64| total + m[head].len()) == tups.len() );
-            }
+            assert( tups_prev.generic_union(tups_cur) == tups_prev+tups_cur );  // trigger + from generic_union
         }
         else {
             assert(prefix =~= Seq::<u64>::empty());
             assert(tups =~= ISet::<(u64, int)>::empty());
-
-//             assert({
-//                 let m = self.durable_mapping.as_snapshot().m;
-//                 let s = m.dom().to_seq();
-//                 let prefix = s.take(pos);
-//                 let tups = ISet::<(u64, int)>::new(|tup: (u64, int)| {
-//                     let (head, i) = tup;
-//                     &&& prefix.contains(head)
-//                     &&& 0 <= i < m[head].len()
-//                 });
-//                 &&& tups.finite()
-//                 &&& prefix.fold_left(0, |total: int, head: u64| total + m[head].len()) == tups.len()
-//             });
         }
     }
 
