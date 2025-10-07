@@ -698,9 +698,9 @@ impl ReadLinearizer<TestKey, TestItem, TestListElement, ReadItemOp<TestKey>>
 {
     type Completion = Self;
 
-    open spec fn namespaces(self) -> ISet<int>
+    open spec fn namespaces(self) -> Set<int>
     {
-        ISet::empty()
+        Set::empty()
     }
 
     open spec fn pre(self, id: int, op: ReadItemOp<TestKey>) -> bool
@@ -750,9 +750,9 @@ where
 {
     type Completion = Self;
 
-    closed spec fn namespaces(self) -> ISet<int>
+    closed spec fn namespaces(self) -> Set<int>
     {
-        ISet::empty()
+        Set::empty()
     }
 
     closed spec fn pre(self, id: int, op: Op) -> bool

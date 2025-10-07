@@ -553,7 +553,7 @@ impl<K, I, L, Op, Lin> ReadLinearizer<K, I, L, Op> for ShardedReadLinearizer<K, 
 {
     type Completion = Lin::Completion;
 
-    closed spec fn namespaces(self) -> ISet<int> {
+    closed spec fn namespaces(self) -> Set<int> {
         self.lin.namespaces().insert(self.inv.namespace())
     }
 
@@ -614,7 +614,7 @@ impl<K, I, L, Op, Lin> MutatingLinearizer<K, I, L, Op> for ShardedMutatingLinear
 {
     type Completion = Lin::Completion;
 
-    closed spec fn namespaces(self) -> ISet<int> {
+    closed spec fn namespaces(self) -> Set<int> {
         self.lin.namespaces().insert(self.inv.namespace())
     }
 
