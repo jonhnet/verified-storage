@@ -42,27 +42,10 @@ where
                 },
             }
     {
-        let res =
         match self.m.get(k) {
             None => None,
-            Some(concrete_key_info) => {
-                proof {
-                    // "if k is in the m hashmap, then tentative contains k"
-                    // that must come from self@. I don't see where.
-                    assume( false ); // TODO(jonh) giving up in frustration
-                    assert( self@.tentative.unwrap().valid() );
-//                     assert( self@.tentative.unwrap().key_info.dom().finite() );
-                    let tentative = self@.tentative.unwrap();
-                    let key_addr = concrete_key_info.row_addr;
-                    let rm = concrete_key_info.rm;
-                    assert( tentative.key_info.contains_key(*k) );
-                    assert( tentative.key_info[*k] == rm );
-                    assert( self.key_corresponds_to_key_addr(*k, key_addr) );
-                }
-                Some((concrete_key_info.row_addr, concrete_key_info.rm))
-            },
-        };
-        res
+            Some(concrete_key_info) => Some((concrete_key_info.row_addr, concrete_key_info.rm)),
+        }
     }
 
     proof fn lemma_writing_to_free_slot_doesnt_change_recovery(
@@ -390,7 +373,6 @@ where
 
         let cki = ConcreteKeyInfo{ row_addr, rm };
         self.m.insert(k.clone_provable(), cki);
-        assert( old(self).m@.contains_key(*k) ==> old(self).m@.to_infinite().contains_key(*k) );
         assert(self.m@.remove(*k) =~= old(self).m@);
 
         let undo_record = KeyUndoRecord::UndoCreate{ row_addr, k: *k };
@@ -507,8 +489,7 @@ where
             broadcast use group_validate_row_addr;
         }
 
-        assert( forall |ke| self.internal_view().m.dom().contains(ke) && ke != *k ==>
-                old(self).internal_view().m.dom().contains(ke) );
+        assert(self.valid(journal@));
         assert(self@.tentative =~= Some(old(self)@.tentative.unwrap().delete(*k)));
         Ok(())
     }
@@ -709,10 +690,7 @@ where
 
         self.status = Ghost(KeyTableStatus::Quiescent);
 
-        // TODO(jonh) discuss: Not sure why we need this trigger now and we didn't before.
-        // Maybe something about reaching through the .to_infinite in m@?
-        assert( forall |ke| self.internal_view().m.dom().contains(ke) && ke != *k ==>
-                old(self).internal_view().m.dom().contains(ke) );
+        assert(self.valid(journal@));
         assert(self@.tentative =~= Some(old(self)@.tentative.unwrap().update(*k, new_rm, former_rm)));
         Ok(())
     }
@@ -743,7 +721,7 @@ where
         }
 
         assert(result@.to_iset() =~= self@.tentative.unwrap().key_info.dom()) by {
-            assert(keys@.1.to_iset() == self.m@.dom().to_infinite());
+            assert(keys@.1.to_set() == self.m@.dom());
             assert(keys@.1.take(keys@.1.len() as int) =~= keys@.1);
             assert(self.m@.to_infinite().dom() =~= self@.tentative.unwrap().key_info.dom());
         }

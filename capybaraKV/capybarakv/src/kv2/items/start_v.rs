@@ -100,7 +100,6 @@ where
             decreases
                 sm.table.num_rows - row_index,
         {
-            let ghost cur_row_addr = row_addr;
             proof {
                 broadcast use group_validate_row_addr;
                 broadcast use pmcopy_axioms;
@@ -118,17 +117,13 @@ where
             }
             else {
                 proof {
-                    assert( item_addrs@.to_infinite().contains(row_addr) ); // trigger contains through to_infinite
-
                     let ghost item = recover_item::<I>(journal@.read_state, row_addr, *sm);
-
                     row_info = row_info.insert(row_addr, ItemRowDisposition::NowhereFree{ item });
                 }
             }
 
             row_index = row_index + 1;
             row_addr = row_addr + sm.table.row_size;
-
         }
     
         assert forall|row_addr: u64| #[trigger] sm.table.validate_row_addr(row_addr)

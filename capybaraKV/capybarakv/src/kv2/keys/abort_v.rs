@@ -119,12 +119,10 @@ where
 
         proof {
             self.memory_mapping@.lemma_corresponds_implication_for_free_list_length(self.free_list@, self.sm);
-            assert(self.memory_mapping@.key_info.dom().finite());
         }
 
         assert(self@ =~= (KeyTableView{ tentative: Some(old(self)@.durable), used_slots: self@.used_slots,
                                         ..old(self)@ }));
-        assert(self.memory_mapping@.key_info.dom() == self@.durable.key_info.dom());    // extn
     }
 }
 

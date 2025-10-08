@@ -35,18 +35,6 @@ where
             self@.durable.key_info.dom().finite(),
             self@.used_slots == self@.durable.key_info.dom().len(),
     {
-//         assert( self@.tentative.unwrap().valid() );
-        // TODO(jonh): valid doesn't imply .finite. How did this ever work before I got here?
-//         assert( old(self)@.tentative.unwrap() == self.internal_view().as_snapshot() );
-
-        // The only things we know about self are valid and tentative is Some. So it's gotta come
-        // from valid.
-//         assert( self.memory_mapping@.key_info.dom().finite() );
-//         assert( self.internal_view().memory_mapping.key_info.dom().finite() );
-        assert( self.internal_view().memory_mapping.key_info.dom() == self.internal_view().as_snapshot().key_info.dom() );
-//         assert( self.internal_view().as_snapshot().key_info.dom().finite() );
-
-//         assert( old(self)@.tentative.unwrap().key_info.dom().finite() );
         // Delete all the undo records, and move everything in the pending deallocations
         // list to the free list.
 
@@ -66,7 +54,6 @@ where
 
         assert(self@ =~= (KeyTableView{ durable: old(self)@.tentative.unwrap(), used_slots: self@.used_slots,
                                         ..old(self)@ }));
-//         assert( self@.durable.key_info.dom().finite() );
     }
 }
 

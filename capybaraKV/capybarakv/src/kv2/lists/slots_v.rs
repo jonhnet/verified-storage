@@ -7,7 +7,6 @@ use super::impl_v::*;
 use super::inv_v::*;
 use super::super::spec_t::*;
 use vstd::set_lib::*;
-use vstd::set::*;
 
 verus! {
 
@@ -68,15 +67,13 @@ impl<L> ListTableInternalView<L>
             });
             assert(tups_cur.finite() && tups_cur.len() == m[s[pos - 1]].len()) by {
                 lemma_bijection_makes_sets_have_equal_size(
-                    int::range_iset(0, m[s[pos - 1]].len() as int),
+                    ISet::range(0, m[s[pos - 1]].len() as int),
                     tups_cur,
                     |i: int| (s[pos - 1], i),
                     |tup: (u64, int)| tup.1
                 );
             }
-
             self.lemma_corresponds_implies_sum_lengths_equals_num_pos_tuples(sm, pos - 1);
-
             assert(prefix.drop_last() == s.take(pos - 1));
             assert(prefix.last() == s[pos - 1]);
             assert(prefix.drop_last().fold_left(0, f) == tups_prev.len());
@@ -93,8 +90,8 @@ impl<L> ListTableInternalView<L>
                     }
                 }
             }
+            assert(tups_prev.disjoint(tups_cur));
             lemma_iset_disjoint_lens(tups_prev, tups_cur);
-            assert( tups_prev.generic_union(tups_cur) == tups_prev+tups_cur );  // trigger + from generic_union
         }
         else {
             assert(prefix =~= Seq::<u64>::empty());

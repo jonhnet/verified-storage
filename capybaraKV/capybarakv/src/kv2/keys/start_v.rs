@@ -194,24 +194,6 @@ where
                     }
                     assert(list_addrs@[list_addrs@.len() - 1] == rm.list_addr);
                 }
-
-//                 proof {
-//                 let gm = m@.to_infinite();
-//                 assert( m@.to_infinite().contains_key(k) );
-//                 assert( memory_mapping.row_info.contains_key(gm[k].row_addr) );
-//                 assert( memory_mapping.row_info[gm[k].row_addr] == (KeyRowDisposition::InHashTable{ k, rm: gm[k].rm }) );
-//                 assert forall|gk: K| #[trigger] gm.contains_key(gk) implies {
-//                     &&& memory_mapping.row_info.contains_key(gm[gk].row_addr)
-//                     &&& memory_mapping.row_info[gm[gk].row_addr] == (KeyRowDisposition::InHashTable{ k: gk, rm: gm[gk].rm })} by {
-//                     if gk == k {
-//                         assert( memory_mapping.row_info.contains_key(gm[gk].row_addr) );
-//                     } else {
-//                         assert( old_m.to_infinite().contains_key(gk) ); // missing trigger. ugh.
-//                         assert( memory_mapping.row_info.contains_key(gm[gk].row_addr) );
-//                     }
-//                 }
-//                 assert( memory_mapping.consistent_with_hash_table(gm) );
-//                 }
             }
             else {
                 proof {
@@ -222,7 +204,6 @@ where
 
             row_index = row_index + 1;
             row_addr = row_addr + sm.table.row_size;
-//             assert( memory_mapping.consistent_with_hash_table(m@.to_infinite()) );
         }
     
         assert forall|row_addr: u64| #[trigger] sm.table.validate_row_addr(row_addr)
@@ -252,21 +233,6 @@ where
             memory_mapping.lemma_corresponds_implication_for_free_list_length(free_list@, *sm);
         }
 
-        proof {
-            let recovered_state = Self::recover(journal@.read_state, *sm).unwrap();
-            assume( false );    // TODO(jonh): left off
-//             assert( recovered_state.key_info.dom().finite() );
-//             assert( keys@.used_slots == recovered_state.key_info.dom().len() );
-            assert( keys.valid(journal@) );
-            assert( keys@.sm == *sm );
-            assert( keys@.durable == recovered_state );
-            assert( keys@.tentative == Some(recovered_state) );
-            assert( recovered_state.key_info.dom().finite() );
-            assert( keys@.used_slots == recovered_state.key_info.dom().len() );
-            assert( item_addrs@.to_infinite() == recovered_state.item_addrs() );
-            assert( list_addrs@.to_iset() == recovered_state.list_addrs() );
-            assert( !list_addrs@.contains(0) );
-        }
         Ok((keys, item_addrs, list_addrs))
     }
 }

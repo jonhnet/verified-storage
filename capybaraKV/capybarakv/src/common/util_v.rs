@@ -1,7 +1,6 @@
 // This file contains miscellaneous utility functions.
 use vstd::prelude::*;
 use vstd::seq_lib::*;
-use vstd::set::*;
 use vstd::set_lib::*;
 use crate::pmem::pmemspec_t::*;
 use crate::pmem::pmcopy_t::*;
@@ -134,7 +133,6 @@ pub proof fn lemma_seq_len_when_no_dup_and_all_values_in_range(s: Seq<int>, min:
     // because s_set only has values between min and max, it's a subset 
     // of the set containing all values between min and max
 
-    // TODO-IGNORE
     assert(s_set.subset_of(Set::range(min, max)));
     lemma_len_subset(s_set, Set::range(min, max));
     assert(s.len() <= Set::range(min, max).len());
@@ -173,11 +171,12 @@ pub exec fn extend_vec_u8_from_slice(v: &mut Vec<u8>, s: &[u8])
     assert(v@ =~= old(v)@ + s@);
 }
 
-// TODO(jonh discuss): I'm not super unhappy about this clunky lemma change.
-// (a) this lemma belongs in vstd anyway
-// (b) this happened because to_seq is no longer available on ISets that have .finite().
-// That's ... not the worst thing that could happen.
-pub proof fn lemma_set_to_seq_contains_iff_set_contains_finite<A>(s: Set<A>, v: A)
+
+// Proves that, given that `s` is finite, it contains `v` if and only if
+// `s.to_seq()` contains `v`.
+pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: ISet<A>, v: A)
+    requires
+        s.finite(),
     ensures
         s.contains(v) <==> s.to_seq().contains(v),
     decreases
@@ -193,7 +192,7 @@ pub proof fn lemma_set_to_seq_contains_iff_set_contains_finite<A>(s: Set<A>, v: 
             assert(s.to_seq().contains(v));
         }
         else {
-            lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), v);
+            lemma_set_to_seq_contains_iff_set_contains(s.remove(x), v);
             if s.contains(v) {
                 assert(s.remove(x).contains(v));
                 assert(s.remove(x).to_seq().contains(v));
@@ -205,42 +204,6 @@ pub proof fn lemma_set_to_seq_contains_iff_set_contains_finite<A>(s: Set<A>, v: 
     }
 }
 
-// Proves that, given that `s` is finite, it contains `v` if and only if
-// `s.to_seq()` contains `v`.
-pub proof fn lemma_set_to_seq_contains_iff_set_contains<A>(s: ISet<A>, v: A)
-    requires
-        s.finite(),
-    ensures
-        s.contains(v) <==> s.to_seq().contains(v),
-    decreases
-        s.len(),
-{
-    s.lemma_to_seq_to_iset_id();
-    lemma_set_to_seq_contains_iff_set_contains_finite(s.to_finite(), v);
-}
-
-// TODO(jonh discuss): This should also move into vstd.
-// Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
-// and has no duplicates.
-// pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates_finite<A>(s: Set<A>)
-//     ensures
-//         s.to_seq().len() == s.len(),
-//         s.to_seq().no_duplicates(),
-//     decreases
-//         s.len(),
-// {
-//     let q = s.to_seq();
-//     if s.len() != 0 {
-//         let x = s.choose();
-//         lemma_set_to_seq_has_same_length_with_no_duplicates_finite(s.remove(x));
-//         assert(!s.remove(x).to_seq().contains(x)) by {
-//             lemma_set_to_seq_contains_iff_set_contains_finite(s.remove(x), x);
-//         }
-//     }
-//     q.unique_seq_to_set();
-// }
-
-// TODO(jonh discuss): This should also move into vstd.
 // Proves that, given that `s` is finite, `s.to_seq()` has the same length as `s`
 // and has no duplicates.
 pub proof fn lemma_set_to_seq_has_same_length_with_no_duplicates<A>(s: ISet<A>)
@@ -305,8 +268,8 @@ pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
     // is finite, from the ambient broadcast proof
     // `vstd::seq_lib::seq_to_set_is_finite`.
 
-    assert(q2.to_set().to_infinite() =~= s2) by {
-        assert forall|y: B| #[trigger] q2.to_set().contains(y) implies s2.contains(y) by {
+    assert(q2.to_iset() =~= s2) by {
+        assert forall|y: B| #[trigger] q2.to_iset().contains(y) implies s2.contains(y) by {
             assert(q2.contains(y));
             let i = choose|i: int| 0 <= i < q2.len() && q2[i] == y;
             assert(y == f(q1[i]));
@@ -314,7 +277,7 @@ pub proof fn lemma_bijection_makes_sets_have_equal_size<A, B>(
             assert(s1.contains(q1[i]));
             assert(s2.contains(f(q1[i]))); // by bijectivity
         }
-        assert forall|y: B| #[trigger] s2.contains(y) implies q2.to_set().contains(y) by {
+        assert forall|y: B| #[trigger] s2.contains(y) implies q2.to_iset().contains(y) by {
             assert(s1.contains(g(y))); // by bijectivity
             let x = g(y);
             assert(q1.contains(x));
