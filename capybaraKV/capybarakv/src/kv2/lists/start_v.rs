@@ -213,6 +213,7 @@ where
 
             let list_addr = list_addrs[which_list];
             assert(list_addrs@.to_iset().contains(list_addr));
+            assert(mapping.list_info.contains_key(list_addr));
             match Self::read_list(journal, sm, Ghost(list_addrs@.to_iset()), Ghost(mapping),
                                   &mut row_addrs_used, list_addr) {
                 Ok(summary) => { m.insert(list_addr, ListTableEntry::Durable{ summary }); },

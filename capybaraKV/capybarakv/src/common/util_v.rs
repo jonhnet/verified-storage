@@ -81,8 +81,9 @@ pub proof fn lemma_injective_map_is_invertible<K, V>(map: IMap<K, V>)
         // of invert was an IMap constructor that declared the key set
         // with contains_value. Now it's from_set(self.dom(map...)), which
         // works for GMaps, but ... ugh.
-        // Could add a broadcast group lemma to get the old identity for\
-        // IMaps.
+        // I tried adding a broadcast group lemma to get the old identity for
+        // IMaps, but it didn't fix it! Now I still don't know what's wrong.
+        // TODO-IGNORE
         assert( map.invert().contains_key(map[k]) );
     }
     assert(map =~= map.invert().invert());
@@ -132,11 +133,11 @@ pub proof fn lemma_seq_len_when_no_dup_and_all_values_in_range(s: Seq<int>, min:
     s.unique_seq_to_set();
     // because s_set only has values between min and max, it's a subset 
     // of the set containing all values between min and max
-    assert(s_set.subset_of(int::range_iset(min, max)));
-//     now broadcast as range_set_properties
-//     lemma_int_range(min, max);
-    lemma_len_subset(s_set, int::range_iset(min, max));
-    assert(s.len() <= int::range_iset(min, max).len());
+
+    // TODO-IGNORE
+    assert(s_set.subset_of(Set::range(min, max)));
+    lemma_len_subset(s_set, Set::range(min, max));
+    assert(s.len() <= Set::range(min, max).len());
 }
 
 // This executable function clones a vector of objects of type `T`

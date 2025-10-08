@@ -19,6 +19,7 @@ default = [ "pmem" ]
 [dependencies]
 crc64fast = "1.0.0"
 rand = "0.8.5"
+# TODO-IGNORE
 #vstd = "0.0.0-2025-08-12-1837"
 vstd = { path = "../../../../source/vstd" }
 #verus_builtin = "0.0.0-2025-08-12-1837"

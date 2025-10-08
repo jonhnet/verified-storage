@@ -93,7 +93,7 @@ impl<L> ListTableInternalView<L>
                     }
                 }
             }
-            lemma_set_disjoint_lens(tups_prev, tups_cur);
+            lemma_iset_disjoint_lens(tups_prev, tups_cur);
             assert( tups_prev.generic_union(tups_cur) == tups_prev+tups_cur );  // trigger + from generic_union
         }
         else {
@@ -161,8 +161,8 @@ impl<L> ListTableInternalView<L>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + list_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(list_row_addrs));
-            assert(free_row_addrs.generic_union(list_row_addrs) =~= valid_row_addrs);
-            vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, list_row_addrs);
+            assert(free_row_addrs + list_row_addrs =~= valid_row_addrs);
+            vstd::set_lib::lemma_iset_disjoint_lens(free_row_addrs, list_row_addrs);
         }
 
         assert(free_row_addrs.len() == self.free_list.len()) by {

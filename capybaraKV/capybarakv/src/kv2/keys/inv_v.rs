@@ -484,8 +484,8 @@ impl<K> KeyMemoryMapping<K>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + key_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(key_row_addrs));
-            assert(free_row_addrs.generic_union(key_row_addrs) =~= valid_row_addrs);
-            vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, key_row_addrs);
+            assert(free_row_addrs + key_row_addrs =~= valid_row_addrs);
+            vstd::set_lib::lemma_iset_disjoint_lens(free_row_addrs, key_row_addrs);
         }
 
         assert(free_row_addrs.len() == free_list.len()) by {

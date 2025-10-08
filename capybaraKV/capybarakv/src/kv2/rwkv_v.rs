@@ -808,9 +808,7 @@ where
         let tracked mut completion;
         open_atomic_invariant!(self.inv.borrow() => inner => {
             proof {
-                let jonh:usize = 811;
                 inner.rwlock_auth.agree(kv_internal.invariant_resource.borrow());
-            assume( !cb.namespaces().contains(self.inv@.namespace()) ); // TODO jonh stuck here debugging invariant-might-be-opened-again
                 completion = cb.apply(op, result, &inner.caller_auth);
             };
         });

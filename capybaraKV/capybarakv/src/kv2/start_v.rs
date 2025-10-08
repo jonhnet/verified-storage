@@ -163,7 +163,7 @@ where
             Err(KvError::CRCMismatch) => { return Err(KvError::CRCMismatch); },
             _ => { assert(false); return Err(KvError::InternalError); },
         };
-        assert(lists@.durable.m.dom() == list_addrs@.to_set().to_infinite());
+        assert(lists@.durable.m.dom() == list_addrs@.to_iset());
 
         let kv = Self{
             status: Ghost(KvStoreStatus::Quiescent),

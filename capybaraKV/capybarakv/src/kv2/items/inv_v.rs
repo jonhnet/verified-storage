@@ -231,12 +231,12 @@ impl<I> ItemTableInternalView<I>
 
         assert(valid_row_addrs.len() == free_row_addrs.len() + item_row_addrs.len()) by {
             assert(free_row_addrs.disjoint(item_row_addrs));
-            assert(free_row_addrs.generic_union(item_row_addrs) =~= valid_row_addrs);
-            vstd::set_lib::lemma_set_disjoint_lens(free_row_addrs, item_row_addrs);
+            assert(free_row_addrs + item_row_addrs =~= valid_row_addrs);
+            vstd::set_lib::lemma_iset_disjoint_lens(free_row_addrs, item_row_addrs);
         }
 
         assert(free_row_addrs.len() == self.free_list.len()) by {
-            assert(self.free_list.to_set().to_infinite() =~= free_row_addrs);
+            assert(self.free_list.to_iset() =~= free_row_addrs);
             self.free_list.unique_seq_to_set();
         }
 
